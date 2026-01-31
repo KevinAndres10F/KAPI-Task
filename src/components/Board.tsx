@@ -1,98 +1,205 @@
-import { useState, useEffect } from 'react';
-import { DragDropContext } from '@hello-pangea/dnd';
-import type { DropResult } from '@hello-pangea/dnd';
-import { ColumnComponent } from './Column';
-import type { Task, Column as ColumnType } from '../types';
+import { useState } from 'react';
+import type {
+  DragOverEvent,
+} from '@dnd-kit/core';
+import {
+  DndContext,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { motion } from 'framer-motion';
+import { LayoutGrid, List } from 'lucide-react';
+import Column from './Column';
+import TaskModal from './TaskModal';
+import type { Task, Status } from '../types';
+import { useTasks } from '../hooks/useTasks';
 
-interface BoardProps {
-  columns: ColumnType[];
-  onTasksChange?: (tasks: Task[]) => void;
-  onAddTask?: (columnId: string) => void;
-  onDeleteTask?: (taskId: string) => void;
-  onEditTask?: (task: Task) => void;
-}
+type ViewType = 'kanban' | 'table';
 
-export const Board: React.FC<BoardProps> = ({
-  columns: initialColumns,
-  onTasksChange,
-  onAddTask,
-  onDeleteTask,
-  onEditTask,
-}) => {
-  const [columns, setColumns] = useState<ColumnType[]>(initialColumns);
+const STATUSES: { value: Status; label: string }[] = [
+  { value: 'todo', label: 'To Do' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'done', label: 'Done' },
+];
 
-  useEffect(() => {
-    setColumns(initialColumns);
-  }, [initialColumns]);
+export default function Board() {
+  const { tasks, moveTask } = useTasks();
+  const [viewType, setViewType] = useState<ViewType>('kanban');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-    // Si no hay destino válido, no hacer nada
-    if (!destination) {
-      return;
-    }
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
 
-    // Si la tarea se suelta en el mismo lugar, no hacer nada
-    if (
-      source.droppableId === destination.droppableId &&
-      source.index === destination.index
-    ) {
-      return;
-    }
+    if (!over) return;
 
-    // Crear una copia de las columnas
-    const newColumns = columns.map((col) => ({
-      ...col,
-      tasks: [...col.tasks],
-    }));
+    const activeTask = tasks.find((t) => t.id === active.id);
+    if (!activeTask) return;
 
-    // Encontrar las columnas de origen y destino
-    const sourceColumn = newColumns.find((col) => col.id === source.droppableId);
-    const destColumn = newColumns.find((col) => col.id === destination.droppableId);
+    const overStatus = over.id as Status;
 
-    if (!sourceColumn || !destColumn) return;
-
-    // Obtener la tarea
-    const [task] = sourceColumn.tasks.splice(source.index, 1);
-
-    // Actualizar el estado de la tarea si cambió de columna
-    if (source.droppableId !== destination.droppableId) {
-      task.status = destination.droppableId as Task['status'];
-    }
-
-    // Insertar en la columna destino
-    destColumn.tasks.splice(destination.index, 0, task);
-
-    // Actualizar órdenes
-    newColumns.forEach((col) => {
-      col.tasks.forEach((t, idx) => {
-        t.order = idx;
-      });
-    });
-
-    setColumns(newColumns);
-
-    // Notificar cambios
-    if (onTasksChange) {
-      const allTasks = newColumns.flatMap((col) => col.tasks);
-      onTasksChange(allTasks);
+    if (activeTask.status !== overStatus) {
+      moveTask(activeTask.id, overStatus, 0);
     }
   };
 
+  const handleDragEnd = () => {
+    // Drag end logic is mainly handled by DragOver
+  };
+
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleAddTask = () => {
+    setSelectedTask(null);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
+
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex gap-6 p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 min-h-screen overflow-x-auto">
-        {columns.map((column) => (
-          <ColumnComponent
-            key={column.id}
-            column={column}
-            onAddTask={() => onAddTask?.(column.id)}
-            onDeleteTask={onDeleteTask}
-            onEditTask={onEditTask}
-          />
-        ))}
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">KAPI Task Board</h1>
+            <p className="text-sm text-gray-600 mt-1">Manage your projects efficiently</p>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewType('kanban')}
+              className={`px-3 py-2 rounded transition-all ${
+                viewType === 'kanban'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="Kanban view"
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button
+              onClick={() => setViewType('table')}
+              className={`px-3 py-2 rounded transition-all ${
+                viewType === 'table'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="Table view"
+            >
+              <List size={18} />
+            </button>
+          </div>
+        </div>
       </div>
-    </DragDropContext>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto p-6">
+        {viewType === 'kanban' ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {STATUSES.map((status) => (
+                <Column
+                  key={status.value}
+                  status={status.value}
+                  title={status.label}
+                  onEdit={handleEditTask}
+                  onAddTask={handleAddTask}
+                />
+              ))}
+            </div>
+          </DndContext>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Task
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Priority
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Due Date
+                  </th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {tasks.map((task) => (
+                  <motion.tr
+                    key={task.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-900">{task.title}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                        {task.priority}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{task.status}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {task.dueDate
+                        ? new Date(task.dueDate).toLocaleDateString()
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => handleEditTask(task)}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Task Modal */}
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        task={selectedTask}
+      />
+    </div>
   );
-};
+}
