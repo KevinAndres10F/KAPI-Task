@@ -47,30 +47,36 @@ CREATE TRIGGER update_tasks_updated_at
 -- Habilitar RLS
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
+-- Eliminar políticas existentes si existen
+DROP POLICY IF EXISTS "Users can view their own tasks" ON tasks;
+DROP POLICY IF EXISTS "Users can insert their own tasks" ON tasks;
+DROP POLICY IF EXISTS "Users can update their own tasks" ON tasks;
+DROP POLICY IF EXISTS "Users can delete their own tasks" ON tasks;
+
 -- Política: Los usuarios solo pueden ver sus propias tareas
 CREATE POLICY "Users can view their own tasks"
   ON tasks
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = tasks.user_id);
 
 -- Política: Los usuarios solo pueden insertar sus propias tareas
 CREATE POLICY "Users can insert their own tasks"
   ON tasks
   FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid() = tasks.user_id);
 
 -- Política: Los usuarios solo pueden actualizar sus propias tareas
 CREATE POLICY "Users can update their own tasks"
   ON tasks
   FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid() = tasks.user_id)
+  WITH CHECK (auth.uid() = tasks.user_id);
 
 -- Política: Los usuarios solo pueden eliminar sus propias tareas
 CREATE POLICY "Users can delete their own tasks"
   ON tasks
   FOR DELETE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = tasks.user_id);
 
 -- ============================================
 -- Datos de ejemplo (Opcional)
