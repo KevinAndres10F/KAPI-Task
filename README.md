@@ -8,15 +8,18 @@
 
 ## 📋 Description
 
-**KAPI Task Board** is a modern, professional-grade project management application built with React, TypeScript, and Vite. It features advanced drag-and-drop functionality, intelligent state management, and beautiful animations for an exceptional user experience.
+**KAPI Task Board** is a modern, professional-grade project management application built with React, TypeScript, and Vite. It features advanced drag-and-drop functionality, intelligent state management, cloud persistence with Supabase, and beautiful animations for an exceptional user experience.
 
 ### 🌟 Why Choose KAPI Task Board?
 
 - **⚡ Lightning Fast**: Built with Vite for instant HMR and lightning-quick builds
 - **🎨 Professional UI**: Designed with modern aesthetics and smooth animations
+- **☁️ Cloud Persistence**: Full Supabase integration with real-time database sync
+- **🔐 Multi-user Support**: Secure authentication with user-specific data
+- **📅 Calendar View**: Visualize tasks with deadlines in an interactive calendar
 - **🚀 Production Ready**: Optimized for deployment with security and performance in mind
 - **📱 Fully Responsive**: Works flawlessly on mobile, tablet, and desktop
-- **🔄 Real-time Sync**: Ready for Supabase integration with real-time updates
+- **🔄 Real-time Sync**: Access your tasks from any device, anywhere
 - **♿ Accessible**: Full keyboard navigation and WCAG compliance
 
 ## ✨ Key Features
@@ -25,14 +28,22 @@
 - **Visual Task Organization**: Organize tasks across To Do, In Progress, and Done columns
 - **Advanced Drag & Drop**: Smooth, responsive drag-and-drop with professional animations
 - **Instant Updates**: Real-time state management with Zustand
-- **Multiple Views**: Switch between Kanban and Table views
+- **Multiple Views**: Switch between Kanban, Table, and Calendar views
 
 ### Task Management
 - **Priority System**: Set tasks as Low, Medium, High, or Critical
 - **Subtasks**: Break down large tasks into manageable subtasks with progress tracking
 - **Assignees**: Assign tasks to team members with visual avatars
 - **Due Dates**: Track deadlines with smart relative date formatting (ES locale)
+- **Calendar View**: Visualize tasks with deadlines in an interactive monthly calendar
 - **Rich Descriptions**: Add detailed task information and notes
+
+### Cloud & Authentication
+- **Supabase Backend**: All tasks stored securely in the cloud
+- **User Authentication**: Sign up/sign in with email and password
+- **User Isolation**: Each user sees only their own tasks (RLS policies)
+- **Multi-device Access**: Access your tasks from any device, anywhere
+- **Auto-sync**: Changes sync automatically across all your devices
 
 ### Professional Modals
 - **Accessible Dialogs**: Radix UI-powered accessible modals
@@ -70,17 +81,48 @@
 ```
 
 ### Backend & Deployment
-- **Supabase**: Real-time database and backend
-- **Netlify**: CI/CD and hosting
-- **GitHub**: Version control
+```json
+{
+  "Database": "Supabase (PostgreSQL)",
+  "Authentication": "Supabase Auth",
+  "Real-time": "Supabase Realtime",
+  "Storage": "Row Level Security (RLS)",
+  "Hosting": "Netlify",
+  "CI/CD": "GitHub Actions + Netlify",
+  "Version Control": "Git + GitHub"
+}
+```
+
+### Backend Features
+- **Supabase PostgreSQL**: Robust, scalable database
+- **Row Level Security**: User data isolation and protection
+- **Authentication**: Email/password with session management
+- **Auto-sync**: Changes propagate across all devices
+- **REST API**: Auto-generated from database schema
 
 ## 🚀 Getting Started
+
+### Quick Start (5 minutes)
+
+**Option 1: With Supabase (Recommended for persistence)**
+1. Follow the interactive checklist in [`SETUP_CHECKLIST.md`](SETUP_CHECKLIST.md)
+2. Or read the detailed guide in [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)
+3. Quick reference: [`QUICKSTART_SUPABASE.md`](QUICKSTART_SUPABASE.md)
+
+**Option 2: Local development (No persistence)**
+```bash
+git clone https://github.com/KevinAndres10F/KAPI-Task.git
+cd KAPI-Task
+npm install
+npm run dev
+```
 
 ### Prerequisites
 - Node.js 18+ and npm/pnpm/yarn
 - Git for version control
+- (Optional) Supabase account for cloud persistence
 
-### Installation
+### Installation with Supabase
 
 ```bash
 # Clone the repository
@@ -238,14 +280,21 @@ export default {
 ### Netlify (Recommended)
 1. Push code to GitHub
 2. Connect repo to Netlify
-3. Build command: `npm run build`
-4. Publish directory: `dist`
-5. Deploy automatically on push
+3. Configure environment variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy settings (auto-detected from `netlify.toml`):
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+5. Deploy automatically on every push
+
+**📖 Detailed guide**: See [`GITHUB_NETLIFY.md`](GITHUB_NETLIFY.md)
 
 ### Vercel
 ```bash
 npm install -g vercel
 vercel
+# Set environment variables in Vercel dashboard
 ```
 
 ### Docker
@@ -262,10 +311,19 @@ CMD ["npm", "run", "preview"]
 
 ## 📚 Documentation
 
-For detailed feature documentation, see:
-- [Professional Features](./PROFESSIONAL_FEATURES.md) - Complete feature overview
-- [Setup Guide](./SETUP.md) - Detailed setup instructions
-- [Deployment Guide](./GITHUB_NETLIFY.md) - Deployment steps
+### Setup & Configuration
+- 📋 [**Setup Checklist**](./SETUP_CHECKLIST.md) - Interactive checklist (74 steps)
+- 🗄️ [**Supabase Setup**](./SUPABASE_SETUP.md) - Complete database configuration guide
+- ⚡ [**Quick Start**](./QUICKSTART_SUPABASE.md) - Get started in 5 minutes
+- 🏗️ [**Architecture**](./ARCHITECTURE.md) - System architecture and data flow diagrams
+
+### Deployment & Features
+- 🚀 [**Deployment Guide**](./GITHUB_NETLIFY.md) - GitHub and Netlify deployment
+- ✨ [**Professional Features**](./PROFESSIONAL_FEATURES.md) - Complete feature overview
+- 🛠️ [**Setup Guide**](./SETUP.md) - Detailed local setup instructions
+
+### Database
+- 📝 [**Database Schema**](./supabase-setup.sql) - SQL setup script for Supabase
 
 ## 🤝 Contributing
 
