@@ -61,9 +61,14 @@ En Supabase SQL Editor, ejecuta:
 ```sql
 CREATE TABLE tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   status TEXT NOT NULL DEFAULT 'todo',
+   priority TEXT NOT NULL DEFAULT 'medium',
+   assignee TEXT,
+   due_date DATE,
+   subtasks JSONB NOT NULL DEFAULT '[]'::jsonb,
   "order" INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -81,17 +86,17 @@ Para desarrollo sin autenticación:
 ```sql
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Enable read access for all users" ON tasks
-    FOR SELECT USING (true);
+CREATE POLICY "Users can read their tasks" ON tasks
+   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Enable insert for all users" ON tasks
-    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can insert their tasks" ON tasks
+   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Enable update for all users" ON tasks
-    FOR UPDATE USING (true);
+CREATE POLICY "Users can update their tasks" ON tasks
+   FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Enable delete for all users" ON tasks
-    FOR DELETE USING (true);
+CREATE POLICY "Users can delete their tasks" ON tasks
+   FOR DELETE USING (auth.uid() = user_id);
 ```
 
 ### 3. Verificar la Conexión

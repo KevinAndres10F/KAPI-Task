@@ -17,6 +17,7 @@ export interface Task {
   assignee?: string;
   dueDate?: string;
   subtasks?: SubTask[];
+  user_id?: string;
   created_at?: string;
   updated_at?: string;
 }

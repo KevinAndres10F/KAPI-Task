@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type {
-  DragOverEvent,
+  DragEndEvent,
+  UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
   DndContext,
@@ -10,7 +11,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
 import { LayoutGrid, List } from 'lucide-react';
 import Column from './Column';
@@ -20,14 +21,19 @@ import { useTasks } from '../hooks/useTasks';
 
 type ViewType = 'kanban' | 'table';
 
+interface BoardProps {
+  userEmail?: string | null;
+  onSignOut: () => void;
+}
+
 const STATUSES: { value: Status; label: string }[] = [
   { value: 'todo', label: 'To Do' },
   { value: 'in-progress', label: 'In Progress' },
   { value: 'done', label: 'Done' },
 ];
 
-export default function Board() {
-  const { tasks, moveTask } = useTasks();
+export default function Board({ userEmail, onSignOut }: BoardProps) {
+  const { tasks, setTasks, persistTasksOrder } = useTasks();
   const [viewType, setViewType] = useState<ViewType>('kanban');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,23 +49,77 @@ export default function Board() {
     })
   );
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const getContainerId = (id: UniqueIdentifier) => {
+    const statusMatch = STATUSES.find((status) => status.value === id);
+    if (statusMatch) return statusMatch.value;
+
+    const task = tasks.find((item) => item.id === id);
+    return task?.status;
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) return;
 
-    const activeTask = tasks.find((t) => t.id === active.id);
-    if (!activeTask) return;
+    const activeContainer = getContainerId(active.id);
+    const overContainer = getContainerId(over.id);
 
-    const overStatus = over.id as Status;
+    if (!activeContainer || !overContainer) return;
 
-    if (activeTask.status !== overStatus) {
-      moveTask(activeTask.id, overStatus, 0);
+    const activeTasks = tasks
+      .filter((task) => task.status === activeContainer)
+      .sort((a, b) => a.order - b.order);
+    const overTasks = tasks
+      .filter((task) => task.status === overContainer)
+      .sort((a, b) => a.order - b.order);
+
+    const activeIndex = activeTasks.findIndex((task) => task.id === active.id);
+    const overIndex = overTasks.findIndex((task) => task.id === over.id);
+
+    if (activeContainer === overContainer) {
+      if (activeIndex === -1) return;
+
+      const targetIndex = overIndex === -1 ? activeTasks.length - 1 : overIndex;
+      if (activeIndex === targetIndex) return;
+
+      const reordered = arrayMove(activeTasks, activeIndex, targetIndex).map(
+        (task, index) => ({ ...task, order: index })
+      );
+
+      const otherTasks = tasks.filter((task) => task.status !== activeContainer);
+      const nextTasks = [...otherTasks, ...reordered];
+
+      setTasks(nextTasks);
+      void persistTasksOrder(nextTasks);
+      return;
     }
-  };
 
-  const handleDragEnd = () => {
-    // Drag end logic is mainly handled by DragOver
+    if (activeIndex === -1) return;
+
+    const [movedTask] = activeTasks.splice(activeIndex, 1);
+    const destinationIndex = overIndex === -1 ? overTasks.length : overIndex;
+    overTasks.splice(destinationIndex, 0, {
+      ...movedTask,
+      status: overContainer,
+    });
+
+    const normalizedActive = activeTasks.map((task, index) => ({
+      ...task,
+      order: index,
+    }));
+    const normalizedOver = overTasks.map((task, index) => ({
+      ...task,
+      order: index,
+    }));
+
+    const remainingTasks = tasks.filter(
+      (task) => task.status !== activeContainer && task.status !== overContainer
+    );
+
+    const nextTasks = [...remainingTasks, ...normalizedActive, ...normalizedOver];
+    setTasks(nextTasks);
+    void persistTasksOrder(nextTasks);
   };
 
   const handleEditTask = (task: Task) => {
@@ -88,29 +148,43 @@ export default function Board() {
           </div>
 
           {/* View Toggle */}
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewType('kanban')}
-              className={`px-3 py-2 rounded transition-all ${
-                viewType === 'kanban'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="Kanban view"
-            >
-              <LayoutGrid size={18} />
-            </button>
-            <button
-              onClick={() => setViewType('table')}
-              className={`px-3 py-2 rounded transition-all ${
-                viewType === 'table'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="Table view"
-            >
-              <List size={18} />
-            </button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewType('kanban')}
+                className={`px-3 py-2 rounded transition-all ${
+                  viewType === 'kanban'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Kanban view"
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button
+                onClick={() => setViewType('table')}
+                className={`px-3 py-2 rounded transition-all ${
+                  viewType === 'table'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Table view"
+              >
+                <List size={18} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {userEmail && (
+                <span className="text-sm text-gray-600">{userEmail}</span>
+              )}
+              <button
+                onClick={onSignOut}
+                className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -121,7 +195,6 @@ export default function Board() {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
-            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -82,13 +82,11 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
     };
 
     if (task) {
-      updateTask(task.id, taskData);
+      void updateTask(task.id, taskData);
     } else {
-      addTask({
-        id: crypto.randomUUID(),
+      void addTask({
         ...taskData,
         status: 'todo',
-        order: 0,
       });
     }
 

@@ -24,7 +24,9 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
   const [isHovered, setIsHovered] = useState(false);
 
   // Filtrar tareas por estado
-  const columnTasks = tasks.filter((task) => task.status === status);
+  const columnTasks = tasks
+    .filter((task) => task.status === status)
+    .sort((a, b) => a.order - b.order);
   const taskIds = columnTasks.map((task) => task.id);
 
   const { setNodeRef, isOver } = useDroppable({
@@ -96,7 +98,7 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
                   <TaskCard
                     task={task}
                     onEdit={onEdit}
-                    onDelete={() => deleteTask(task.id)}
+                    onDelete={() => void deleteTask(task.id)}
                   />
                 </motion.div>
               ))

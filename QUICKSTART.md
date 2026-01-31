@@ -21,9 +21,14 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 # 3. En Supabase SQL Editor, copia y ejecuta esto:
 CREATE TABLE tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   status TEXT NOT NULL DEFAULT 'todo',
+  priority TEXT NOT NULL DEFAULT 'medium',
+  assignee TEXT,
+  due_date DATE,
+  subtasks JSONB NOT NULL DEFAULT '[]'::jsonb,
   "order" INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
