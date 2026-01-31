@@ -13,13 +13,14 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, Calendar as CalendarIcon } from 'lucide-react';
 import Column from './Column';
 import TaskModal from './TaskModal';
+import Calendar from './Calendar';
 import type { Task, Status } from '../types';
 import { useTasks } from '../hooks/useTasks';
 
-type ViewType = 'kanban' | 'table';
+type ViewType = 'kanban' | 'table' | 'calendar';
 
 interface BoardProps {
   userEmail?: string | null;
@@ -172,6 +173,17 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
               >
                 <List size={18} />
               </button>
+              <button
+                onClick={() => setViewType('calendar')}
+                className={`px-3 py-2 rounded transition-all ${
+                  viewType === 'calendar'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Calendar view"
+              >
+                <CalendarIcon size={18} />
+              </button>
             </div>
 
             <div className="flex items-center gap-3">
@@ -209,6 +221,8 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
               ))}
             </div>
           </DndContext>
+        ) : viewType === 'calendar' ? (
+          <Calendar tasks={tasks} onTaskClick={handleEditTask} />
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full">
