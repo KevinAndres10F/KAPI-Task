@@ -72,46 +72,46 @@ export default function Calendar({ tasks, onTaskClick }: CalendarProps) {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6">
+    <div className="w-full h-full mx-auto px-2 sm:px-4 md:px-6 py-3 sm:py-6 overflow-y-auto">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
+      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 text-center sm:text-left">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <button
               onClick={goToToday}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              className="px-3 sm:px-4 py-2 sm:py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors active:scale-95"
             >
               Hoy
             </button>
             <button
               onClick={previousMonth}
-              className="p-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              className="p-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors active:scale-95"
               aria-label="Mes anterior"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={20} className="sm:w-5 sm:h-5" />
             </button>
             <button
               onClick={nextMonth}
-              className="p-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              className="p-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors active:scale-95"
               aria-label="Mes siguiente"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={20} className="sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="bg-white rounded-lg shadow-sm p-2 sm:p-3 md:p-4">
         {/* Day Names */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1 sm:mb-2">
           {dayNames.map((day) => (
             <div
               key={day}
-              className="text-center text-sm font-semibold text-gray-700 py-2"
+              className="text-center text-xs sm:text-sm font-semibold text-gray-700 py-1 sm:py-2"
             >
               {day}
             </div>
@@ -119,7 +119,7 @@ export default function Calendar({ tasks, onTaskClick }: CalendarProps) {
         </div>
 
         {/* Days Grid */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {days.map((day, index) => {
             if (day === null) {
               return <div key={`empty-${index}`} className="aspect-square" />;
@@ -140,37 +140,37 @@ export default function Calendar({ tasks, onTaskClick }: CalendarProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.2, delay: index * 0.01 }}
                 className={`
-                  aspect-square border rounded-lg p-2 relative overflow-hidden
+                  aspect-square border rounded-lg p-1 sm:p-2 relative overflow-hidden
                   ${isToday(day) ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-200'}
                   ${isPast && !isToday(day) ? 'bg-gray-50' : ''}
-                  ${dayTasks.length > 0 ? 'cursor-pointer hover:shadow-md' : ''}
+                  ${dayTasks.length > 0 ? 'cursor-pointer hover:shadow-md active:scale-95' : ''}
                   transition-all duration-200
                 `}
               >
-                <div className="text-sm font-medium text-gray-900 mb-1">
+                <div className="text-xs sm:text-sm font-medium text-gray-900 mb-0.5 sm:mb-1">
                   {day}
                 </div>
 
                 {/* Tasks for this day */}
                 {dayTasks.length > 0 && (
-                  <div className="space-y-1 overflow-hidden">
-                    {dayTasks.slice(0, 3).map((task) => (
+                  <div className="space-y-0.5 sm:space-y-1 overflow-hidden">
+                    {dayTasks.slice(0, 2).map((task) => (
                       <button
                         key={task.id}
                         onClick={() => onTaskClick(task)}
                         className={`
-                          w-full text-left text-xs px-1 py-0.5 rounded truncate
+                          w-full text-left text-[9px] sm:text-xs px-0.5 sm:px-1 py-0.5 rounded truncate
                           border-l-2 ${PRIORITY_COLORS[task.priority]}
-                          bg-gray-50 hover:bg-gray-100 transition-colors
+                          bg-gray-50 hover:bg-gray-100 transition-colors active:scale-95
                         `}
                         title={task.title}
                       >
                         {task.title}
                       </button>
                     ))}
-                    {dayTasks.length > 3 && (
-                      <div className="text-xs text-gray-500 px-1">
-                        +{dayTasks.length - 3} más
+                    {dayTasks.length > 2 && (
+                      <div className="text-[8px] sm:text-xs text-gray-500 px-0.5 sm:px-1">
+                        +{dayTasks.length - 2}
                       </div>
                     )}
                   </div>

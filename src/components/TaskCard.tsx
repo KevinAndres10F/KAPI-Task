@@ -42,7 +42,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       transition={{ duration: 0.2 }}
       {...attributes}
       {...listeners}
-      className={`bg-white rounded-xl p-4 shadow-sm hover:shadow-lg transition-all cursor-grab active:cursor-grabbing border-l-4 ${
+      className={`bg-white rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-lg transition-all cursor-grab active:cursor-grabbing border-l-4 group ${
         isDragging ? 'opacity-50 shadow-xl' : ''
       } ${
         PRIORITY_COLORS[task.priority]
@@ -50,36 +50,38 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
     >
       {/* Header */}
       <div
-        className="flex items-start justify-between gap-2 mb-3"
+        className="flex items-start justify-between gap-2 mb-2 sm:mb-3"
         onClick={(e) => {
           e.stopPropagation();
           onEdit(task);
         }}
       >
-        <h3 className="font-semibold text-gray-900 flex-1 line-clamp-2 text-sm hover:text-blue-600 cursor-pointer">
+        <h3 className="font-semibold text-gray-900 flex-1 line-clamp-2 text-sm sm:text-base hover:text-blue-600 cursor-pointer leading-tight">
           {task.title}
         </h3>
         <div
-          className="flex gap-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+          className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
           onClick={(e) => e.stopPropagation()}
         >
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onEdit(task)}
-            className="p-1 hover:bg-blue-50 rounded text-blue-600 transition-colors"
+            className="p-1.5 sm:p-1 hover:bg-blue-50 rounded text-blue-600 transition-colors"
             title="Edit"
+            aria-label="Edit task"
           >
-            <Edit2 size={14} />
+            <Edit2 size={16} className="sm:w-[14px] sm:h-[14px]" />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onDelete(task.id)}
-            className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
+            className="p-1.5 sm:p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
             title="Delete"
+            aria-label="Delete task"
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} className="sm:w-[14px] sm:h-[14px]" />
           </motion.button>
         </div>
       </div>

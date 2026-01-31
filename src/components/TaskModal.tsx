@@ -97,27 +97,28 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-40" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white shadow-xl p-0 animate-in fade-in zoom-in-95 slide-in-from-left-1/2 slide-in-from-top-[48%]">
+        <Dialog.Content className="fixed left-0 sm:left-[50%] top-0 sm:top-[50%] z-50 w-full sm:w-auto sm:max-w-2xl h-full sm:h-auto sm:-translate-x-1/2 sm:-translate-y-1/2 rounded-none sm:rounded-xl bg-white shadow-xl p-0 animate-in fade-in sm:zoom-in-95 slide-in-from-bottom sm:slide-in-from-left-1/2 sm:slide-in-from-top-[48%] overflow-hidden">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 1 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
+            className="h-full flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-200 p-6">
-              <Dialog.Title className="text-2xl font-bold text-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 p-4 sm:p-6 flex-shrink-0">
+              <Dialog.Title className="text-xl sm:text-2xl font-bold text-gray-900">
                 {task ? 'Edit Task' : 'Create New Task'}
               </Dialog.Title>
-              <Dialog.Close className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <Dialog.Close className="p-2 hover:bg-gray-100 rounded-lg transition-colors active:scale-95">
                 <X size={20} className="text-gray-600" />
               </Dialog.Close>
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+            <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto overscroll-contain">
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
                   Task Title *
                 </label>
                 <input
@@ -125,14 +126,14 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter task title..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   autoFocus
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
                   Description
                 </label>
                 <textarea
@@ -140,20 +141,20 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add task details..."
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
               </div>
 
               {/* Priority, Assignee, Due Date */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
                     Priority
                   </label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as Priority)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     {PRIORITY_OPTIONS.map((p) => (
                       <option key={p} value={p}>
@@ -164,7 +165,7 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
                     Assignee
                   </label>
                   <input
@@ -172,12 +173,12 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                     value={assignee}
                     onChange={(e) => setAssignee(e.target.value)}
                     placeholder="Name or email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
                     Due Date
                   </label>
                   <div className="relative">
@@ -185,7 +186,7 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                       type="date"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -193,7 +194,7 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
 
               {/* Subtasks */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-3">
+                <label className="block text-sm font-medium text-gray-900 mb-2 sm:mb-3">
                   Subtasks
                 </label>
                 <div className="space-y-2 mb-3">
@@ -203,16 +204,16 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg group"
+                      className="flex items-center gap-3 p-2 sm:p-2 bg-gray-50 rounded-lg group"
                     >
                       <input
                         type="checkbox"
                         checked={subtask.completed}
                         onChange={() => handleToggleSubtask(subtask.id)}
-                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                        className="w-5 h-5 sm:w-4 sm:h-4 rounded border-gray-300 cursor-pointer flex-shrink-0"
                       />
                       <span
-                        className={`flex-1 text-sm ${
+                        className={`flex-1 text-sm sm:text-sm ${
                           subtask.completed
                             ? 'line-through text-gray-500'
                             : 'text-gray-900'
@@ -222,10 +223,10 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                       </span>
                       <button
                         onClick={() => handleDeleteSubtask(subtask.id)}
-                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-100 text-red-600 rounded transition-all"
+                        className="p-1.5 sm:p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-100 text-red-600 rounded transition-all active:scale-95"
                         title="Delete subtask"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} className="sm:w-4 sm:h-4" />
                       </button>
                     </motion.div>
                   ))}
@@ -243,30 +244,30 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                       }
                     }}
                     placeholder="Add a subtask..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <button
                     onClick={handleAddSubtask}
-                    className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                    className="px-3 sm:px-4 py-2.5 sm:py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors active:scale-95"
                   >
-                    <Plus size={18} />
+                    <Plus size={20} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 p-6 flex gap-3 justify-end">
+            <div className="border-t border-gray-200 p-4 sm:p-6 flex gap-3 justify-end flex-shrink-0 bg-gray-50 sm:bg-transparent">
               <button
                 onClick={onClose}
-                className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 text-gray-700 bg-white sm:bg-gray-100 border border-gray-300 sm:border-0 hover:bg-gray-200 rounded-lg transition-colors font-medium active:scale-95"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={!title.trim()}
-                className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 rounded-lg transition-colors font-medium"
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 rounded-lg transition-colors font-medium active:scale-95"
               >
                 {task ? 'Update' : 'Create'} Task
               </button>

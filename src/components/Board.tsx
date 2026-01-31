@@ -142,57 +142,61 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">KAPI Task Board</h1>
-            <p className="text-sm text-gray-600 mt-1">Manage your projects efficiently</p>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900">KAPI Task Board</h1>
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 hidden sm:block">Manage your projects efficiently</p>
+            </div>
 
           {/* View Toggle */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewType('kanban')}
-                className={`px-3 py-2 rounded transition-all ${
+                className={`p-2 sm:px-3 sm:py-2 rounded transition-all ${
                   viewType === 'kanban'
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
                 title="Kanban view"
+                aria-label="Kanban view"
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={18} className="sm:w-[18px] sm:h-[18px] w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewType('table')}
-                className={`px-3 py-2 rounded transition-all ${
+                className={`p-2 sm:px-3 sm:py-2 rounded transition-all ${
                   viewType === 'table'
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
                 title="Table view"
+                aria-label="Table view"
               >
-                <List size={18} />
+                <List size={18} className="sm:w-[18px] sm:h-[18px] w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewType('calendar')}
-                className={`px-3 py-2 rounded transition-all ${
+                className={`p-2 sm:px-3 sm:py-2 rounded transition-all ${
                   viewType === 'calendar'
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
                 title="Calendar view"
+                aria-label="Calendar view"
               >
-                <CalendarIcon size={18} />
+                <CalendarIcon size={18} className="sm:w-[18px] sm:h-[18px] w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {userEmail && (
-                <span className="text-sm text-gray-600">{userEmail}</span>
+                <span className="text-xs sm:text-sm text-gray-600 truncate max-w-[120px] sm:max-w-none">{userEmail}</span>
               )}
               <button
                 onClick={onSignOut}
-                className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors whitespace-nowrap"
               >
                 Sign out
               </button>
@@ -200,16 +204,17 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
         {viewType === 'kanban' ? (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {STATUSES.map((status) => (
                 <Column
                   key={status.value}

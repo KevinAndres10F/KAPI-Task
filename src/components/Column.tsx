@@ -49,37 +49,36 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
   return (
     <motion.div
       className={`rounded-xl border-2 transition-all duration-200 ${getStatusColor()} ${
-        isOver ? 'scale-105 shadow-xl' : 'shadow-sm'
-      } flex flex-col h-[600px] min-w-[320px] overflow-hidden`}
+        isOver ? 'scale-[1.02] shadow-xl' : 'shadow-sm'
+      } flex flex-col h-[calc(100vh-180px)] sm:h-[600px] min-h-[400px] overflow-hidden touch-pan-y`}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 p-3 sm:p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">{title}</h2>
+          <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 sm:px-2.5 py-1 rounded-full">
             {columnTasks.length}
           </span>
         </div>
-        {isHovered && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            onClick={onAddTask}
-            className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
-            title="Add task"
-          >
-            <Plus size={18} />
-          </motion.button>
-        )}
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: isHovered ? 1 : 0.7, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          onClick={onAddTask}
+          className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors active:scale-95"
+          title="Add task"
+          aria-label="Add new task"
+        >
+          <Plus size={20} className="sm:w-[18px] sm:h-[18px]" />
+        </motion.button>
       </div>
 
       {/* Tasks Container */}
       <div
         ref={setNodeRef}
-        className="flex-1 overflow-y-auto p-3 space-y-2"
+        className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 overscroll-contain"
       >
         <SortableContext
           items={taskIds}
@@ -94,6 +93,7 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
+                  className="group"
                 >
                   <TaskCard
                     task={task}
@@ -103,7 +103,7 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
                 </motion.div>
               ))
             ) : (
-              <div className="flex items-center justify-center h-full text-center">
+              <div className="flex items-center justify-center h-full text-center px-4">
                 <div>
                   <p className="text-gray-400 text-sm">No tasks yet</p>
                   <p className="text-gray-300 text-xs mt-1">Drag tasks here or add one</p>
