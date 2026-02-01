@@ -1,11 +1,10 @@
 import { motion } from 'framer-motion';
-import { Trash2, Edit2, Clock } from 'lucide-react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { Trash2, Edit2, Clock, MoveRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { Task } from '../types';
+import type { Task, Status } from '../types';
 import { PRIORITY_COLORS, PRIORITY_LABELS } from '../types';
+import { useTasks } from '../hooks/useTasks';
 
 interface TaskCardProps {
   task: Task;
@@ -13,19 +12,20 @@ interface TaskCardProps {
   onDelete: (id: string) => void;
 }
 
-export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
+const STATUS_LABELS: Record<Status, string> = {
+  'todo': 'Por Hacer',
+  'in-progress': 'En Progreso',
+  'done': 'Completado'
+};
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+
+export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+  const { updateTask } = useTasks();
+
+  const handleStatusChange = async (newStatus: Status) => {
+    if (newStatus !== task.status) {
+      await updateTask(task.id, { status: newStatus });
+    }
   };
 
   const completedSubtasks = task.subtasks?.filter((st) => st.completed).length || 0;
@@ -33,18 +33,12 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
 
   return (
     <motion.div
-      ref={setNodeRef}
-      style={style}
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.2 }}
-      {...attributes}
-      {...listeners}
-      className={`bg-white rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-lg transition-all cursor-grab active:cursor-grabbing border-l-4 group ${
-        isDragging ? 'opacity-50 shadow-xl' : ''
-      } ${
+      className={`bg-white rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-lg transition-all border-l-4 group ${
         PRIORITY_COLORS[task.priority]
       }`}
     >
@@ -98,6 +92,26 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
           {PRIORITY_LABELS[task.priority]}
         </span>
+      </div>
+
+      {/* Status Selector */}
+      <div className="mb-3">
+        <label className="block text-xs font-medium text-gray-600 mb-1.5">
+          <MoveRight size={12} className="inline mr-1" />
+          Estado
+        </label>
+        <select
+          value={task.status}
+          onChange={(e) => handleStatusChange(e.target.value as Status)}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:border-gray-400 transition-colors bg-white"
+        >
+          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Subtasks Progress */}

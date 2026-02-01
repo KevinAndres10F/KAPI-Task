@@ -1,11 +1,4 @@
 import React, { useState } from 'react';
-import {
-  useDroppable,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskCard from './TaskCard';
@@ -27,11 +20,6 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
   const columnTasks = tasks
     .filter((task) => task.status === status)
     .sort((a, b) => a.order - b.order);
-  const taskIds = columnTasks.map((task) => task.id);
-
-  const { setNodeRef, isOver } = useDroppable({
-    id: status,
-  });
 
   const getStatusColor = () => {
     switch (status) {
@@ -48,9 +36,7 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
 
   return (
     <motion.div
-      className={`rounded-xl border-2 transition-all duration-200 ${getStatusColor()} ${
-        isOver ? 'scale-[1.02] shadow-xl' : 'shadow-sm'
-      } flex flex-col h-[calc(100vh-180px)] sm:h-[600px] min-h-[400px] overflow-hidden touch-pan-y`}
+      className={`rounded-xl border-2 transition-all duration-200 ${getStatusColor()} shadow-sm flex flex-col h-[calc(100vh-180px)] sm:h-[600px] min-h-[400px] overflow-hidden touch-pan-y`}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
@@ -77,41 +63,35 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
 
       {/* Tasks Container */}
       <div
-        ref={setNodeRef}
         className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 overscroll-contain"
       >
-        <SortableContext
-          items={taskIds}
-          strategy={verticalListSortingStrategy}
-        >
-          <AnimatePresence>
-            {columnTasks.length > 0 ? (
-              columnTasks.map((task) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="group"
-                >
-                  <TaskCard
-                    task={task}
-                    onEdit={onEdit}
-                    onDelete={() => void deleteTask(task.id)}
-                  />
-                </motion.div>
-              ))
-            ) : (
-              <div className="flex items-center justify-center h-full text-center px-4">
-                <div>
-                  <p className="text-gray-400 text-sm">No tasks yet</p>
-                  <p className="text-gray-300 text-xs mt-1">Drag tasks here or add one</p>
-                </div>
+        <AnimatePresence>
+          {columnTasks.length > 0 ? (
+            columnTasks.map((task) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+                className="group"
+              >
+                <TaskCard
+                  task={task}
+                  onEdit={onEdit}
+                  onDelete={() => void deleteTask(task.id)}
+                />
+              </motion.div>
+            ))
+          ) : (
+            <div className="flex items-center justify-center h-full text-center px-4">
+              <div>
+                <p className="text-gray-400 text-sm">No hay tareas aún</p>
+                <p className="text-gray-300 text-xs mt-1">Agrega una nueva tarea</p>
               </div>
-            )}
-          </AnimatePresence>
-        </SortableContext>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

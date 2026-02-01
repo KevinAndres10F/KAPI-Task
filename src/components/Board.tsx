@@ -1,17 +1,4 @@
 import { useState } from 'react';
-import type {
-  DragEndEvent,
-  UniqueIdentifier,
-} from '@dnd-kit/core';
-import {
-  DndContext,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
 import { LayoutGrid, List, Calendar as CalendarIcon } from 'lucide-react';
 import Column from './Column';
@@ -34,94 +21,10 @@ const STATUSES: { value: Status; label: string }[] = [
 ];
 
 export default function Board({ userEmail, onSignOut }: BoardProps) {
-  const { tasks, setTasks, persistTasksOrder } = useTasks();
+  const { tasks } = useTasks();
   const [viewType, setViewType] = useState<ViewType>('kanban');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const getContainerId = (id: UniqueIdentifier) => {
-    const statusMatch = STATUSES.find((status) => status.value === id);
-    if (statusMatch) return statusMatch.value;
-
-    const task = tasks.find((item) => item.id === id);
-    return task?.status;
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const activeContainer = getContainerId(active.id);
-    const overContainer = getContainerId(over.id);
-
-    if (!activeContainer || !overContainer) return;
-
-    const activeTasks = tasks
-      .filter((task) => task.status === activeContainer)
-      .sort((a, b) => a.order - b.order);
-    const overTasks = tasks
-      .filter((task) => task.status === overContainer)
-      .sort((a, b) => a.order - b.order);
-
-    const activeIndex = activeTasks.findIndex((task) => task.id === active.id);
-    const overIndex = overTasks.findIndex((task) => task.id === over.id);
-
-    if (activeContainer === overContainer) {
-      if (activeIndex === -1) return;
-
-      const targetIndex = overIndex === -1 ? activeTasks.length - 1 : overIndex;
-      if (activeIndex === targetIndex) return;
-
-      const reordered = arrayMove(activeTasks, activeIndex, targetIndex).map(
-        (task, index) => ({ ...task, order: index })
-      );
-
-      const otherTasks = tasks.filter((task) => task.status !== activeContainer);
-      const nextTasks = [...otherTasks, ...reordered];
-
-      setTasks(nextTasks);
-      void persistTasksOrder(nextTasks);
-      return;
-    }
-
-    if (activeIndex === -1) return;
-
-    const [movedTask] = activeTasks.splice(activeIndex, 1);
-    const destinationIndex = overIndex === -1 ? overTasks.length : overIndex;
-    overTasks.splice(destinationIndex, 0, {
-      ...movedTask,
-      status: overContainer,
-    });
-
-    const normalizedActive = activeTasks.map((task, index) => ({
-      ...task,
-      order: index,
-    }));
-    const normalizedOver = overTasks.map((task, index) => ({
-      ...task,
-      order: index,
-    }));
-
-    const remainingTasks = tasks.filter(
-      (task) => task.status !== activeContainer && task.status !== overContainer
-    );
-
-    const nextTasks = [...remainingTasks, ...normalizedActive, ...normalizedOver];
-    setTasks(nextTasks);
-    void persistTasksOrder(nextTasks);
-  };
 
   const handleEditTask = (task: Task) => {
     setSelectedTask(task);
@@ -209,23 +112,17 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
       {/* Content */}
       <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
         {viewType === 'kanban' ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-              {STATUSES.map((status) => (
-                <Column
-                  key={status.value}
-                  status={status.value}
-                  title={status.label}
-                  onEdit={handleEditTask}
-                  onAddTask={handleAddTask}
-                />
-              ))}
-            </div>
-          </DndContext>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+            {STATUSES.map((status) => (
+              <Column
+                key={status.value}
+                status={status.value}
+                title={status.label}
+                onEdit={handleEditTask}
+                onAddTask={handleAddTask}
+              />
+            ))}
+          </div>
         ) : viewType === 'calendar' ? (
           <Calendar tasks={tasks} onTaskClick={handleEditTask} />
         ) : (
