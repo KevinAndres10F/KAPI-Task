@@ -10,6 +10,10 @@ DROP POLICY IF EXISTS "Users can view their own tasks" ON tasks;
 DROP POLICY IF EXISTS "Users can insert their own tasks" ON tasks;
 DROP POLICY IF EXISTS "Users can update their own tasks" ON tasks;
 DROP POLICY IF EXISTS "Users can delete their own tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can view all tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can insert tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can update all tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can delete all tasks" ON tasks;
 
 -- Eliminar tabla existente (CUIDADO: esto borra todos los datos)
 DROP TABLE IF EXISTS tasks CASCADE;
@@ -71,31 +75,35 @@ DROP POLICY IF EXISTS "Users can view their own tasks" ON tasks;
 DROP POLICY IF EXISTS "Users can insert their own tasks" ON tasks;
 DROP POLICY IF EXISTS "Users can update their own tasks" ON tasks;
 DROP POLICY IF EXISTS "Users can delete their own tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can view all tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can insert tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can update all tasks" ON tasks;
+DROP POLICY IF EXISTS "Authenticated users can delete all tasks" ON tasks;
 
--- Política: Los usuarios solo pueden ver sus propias tareas
-CREATE POLICY "Users can view their own tasks"
+-- Política: Usuarios autenticados pueden ver todas las tareas
+CREATE POLICY "Authenticated users can view all tasks"
   ON tasks
   FOR SELECT
-  USING (auth.uid() = tasks.user_id);
+  USING (auth.uid() IS NOT NULL);
 
--- Política: Los usuarios solo pueden insertar sus propias tareas
-CREATE POLICY "Users can insert their own tasks"
+-- Política: Usuarios autenticados pueden insertar tareas
+CREATE POLICY "Authenticated users can insert tasks"
   ON tasks
   FOR INSERT
-  WITH CHECK (auth.uid() = tasks.user_id);
+  WITH CHECK (auth.uid() IS NOT NULL);
 
--- Política: Los usuarios solo pueden actualizar sus propias tareas
-CREATE POLICY "Users can update their own tasks"
+-- Política: Usuarios autenticados pueden actualizar cualquier tarea
+CREATE POLICY "Authenticated users can update all tasks"
   ON tasks
   FOR UPDATE
-  USING (auth.uid() = tasks.user_id)
-  WITH CHECK (auth.uid() = tasks.user_id);
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
--- Política: Los usuarios solo pueden eliminar sus propias tareas
-CREATE POLICY "Users can delete their own tasks"
+-- Política: Usuarios autenticados pueden eliminar cualquier tarea
+CREATE POLICY "Authenticated users can delete all tasks"
   ON tasks
   FOR DELETE
-  USING (auth.uid() = tasks.user_id);
+  USING (auth.uid() IS NOT NULL);
 
 -- ============================================
 -- PASO 6: Verificación (Opcional)

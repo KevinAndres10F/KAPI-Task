@@ -35,7 +35,6 @@ export const tasksApi = {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('user_id', userData.user.id)
       .order('order', { ascending: true });
 
     if (error) throw error;
