@@ -27,11 +27,8 @@ const mapTaskToDb = (task: Partial<Task>) => {
 };
 
 export const tasksApi = {
+  // Obtener TODAS las tareas (colaborativo - todos ven todo)
   async getTasks() {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!userData?.user) return [];
-
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -41,6 +38,7 @@ export const tasksApi = {
     return (data || []).map(mapDbTask);
   },
 
+  // Crear nueva tarea (asociada al usuario que la crea)
   async createTask(task: Task) {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
@@ -61,6 +59,7 @@ export const tasksApi = {
     return mapDbTask(data?.[0]);
   },
 
+  // Actualizar tarea (cualquier usuario puede actualizar cualquier tarea)
   async updateTask(id: string, updates: Partial<Task>) {
     const { data, error } = await supabase
       .from('tasks')
@@ -72,6 +71,7 @@ export const tasksApi = {
     return mapDbTask(data?.[0]);
   },
 
+  // Eliminar tarea (cualquier usuario puede eliminar cualquier tarea)
   async deleteTask(id: string) {
     const { error } = await supabase
       .from('tasks')
@@ -81,6 +81,7 @@ export const tasksApi = {
     if (error) throw error;
   },
 
+  // Actualizar orden de tareas
   async updateTaskOrder(tasks: Task[]) {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
