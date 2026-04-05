@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutGrid, List, CalendarDays, BarChart2, AlignJustify,
@@ -6,9 +6,9 @@ import {
   ChevronUp, ChevronDown, AlertCircle, Clock, CheckCircle2,
   TrendingUp, Users, Filter,
 } from 'lucide-react';
-import Column from './Column';
 import TaskModal from './TaskModal';
 import Calendar from './Calendar';
+import DraggableBoard from './DraggableBoard';
 import type { Task, Status, Priority, ViewType } from '../types';
 import {
   PRIORITY_BADGE_CLASSES, PRIORITY_DOT_CLASSES, PRIORITY_LABELS,
@@ -199,8 +199,32 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
 
   /* ── helpers ── */
   const handleEditTask = (task: Task) => { setSelectedTask(task); setIsModalOpen(true); };
-  const handleAddTask  = ()          => { setSelectedTask(null); setIsModalOpen(true); };
+  const handleAddTask  = useCallback(() => { setSelectedTask(null); setIsModalOpen(true); }, []);
   const handleModalClose = ()        => { setIsModalOpen(false); setSelectedTask(null); };
+
+  /* ── horizontal board scroll (pointer drag on empty area) ── */
+  const boardScrollRef = useRef<HTMLDivElement>(null);
+  const boardDrag = useRef<{ active: boolean; startX: number; scrollLeft: number }>({ active: false, startX: 0, scrollLeft: 0 });
+
+  const handleBoardPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('[data-task-card]')) return;
+    const el = boardScrollRef.current;
+    if (!el) return;
+    boardDrag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft };
+    el.setPointerCapture(e.pointerId);
+  }, []);
+
+  const handleBoardPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!boardDrag.current.active) return;
+    const el = boardScrollRef.current;
+    if (!el) return;
+    const dx = e.clientX - boardDrag.current.startX;
+    el.scrollLeft = boardDrag.current.scrollLeft - dx;
+  }, []);
+
+  const handleBoardPointerUp = useCallback(() => {
+    boardDrag.current.active = false;
+  }, []);
 
   /* ── dashboard stats ── */
   const today = new Date();
@@ -568,18 +592,19 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
 
           {/* ── BOARD (KANBAN) ── */}
           {viewType === 'board' && (
-            <div className="p-4 sm:p-6 animate-fadeIn">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {STATUSES.map(status => (
-                  <Column
-                    key={status.value}
-                    status={status.value}
-                    title={status.label}
-                    onEdit={handleEditTask}
-                    onAddTask={handleAddTask}
-                  />
-                ))}
-              </div>
+            <div
+              ref={boardScrollRef}
+              onPointerDown={handleBoardPointerDown}
+              onPointerMove={handleBoardPointerMove}
+              onPointerUp={handleBoardPointerUp}
+              onPointerCancel={handleBoardPointerUp}
+              className="p-4 sm:p-6 animate-fadeIn overflow-x-auto cursor-grab active:cursor-grabbing select-none"
+            >
+              <DraggableBoard
+                statuses={STATUSES}
+                onEdit={handleEditTask}
+                onAddTask={() => handleAddTask()}
+              />
             </div>
           )}
 

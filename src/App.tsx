@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { CheckSquare } from 'lucide-react';
 import Board from './components/Board';
 import Auth from './components/Auth';
 import { useTasks } from './hooks/useTasks';
+import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { authApi } from './lib/supabaseClient';
 import './App.css';
 
 function App() {
   const { loadTasks, setTasks } = useTasks();
+  useRealtimeSync();
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
@@ -62,7 +65,12 @@ function App() {
     return <Auth onAuthSuccess={() => void loadTasks()} />;
   }
 
-  return <Board userEmail={sessionEmail} onSignOut={handleSignOut} />;
+  return (
+    <>
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      <Board userEmail={sessionEmail} onSignOut={handleSignOut} />
+    </>
+  );
 }
 
 export default App;

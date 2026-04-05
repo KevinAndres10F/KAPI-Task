@@ -20,7 +20,7 @@ export default defineConfig({
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
             return 'vendor'
           }
-          if (id.includes('hello-pangea')) {
+          if (id.includes('@dnd-kit') || id.includes('hello-pangea')) {
             return 'dnd'
           }
           if (id.includes('supabase')) {
