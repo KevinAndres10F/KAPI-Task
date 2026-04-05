@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { CheckSquare } from 'lucide-react';
 import Board from './components/Board';
 import Auth from './components/Auth';
 import { useTasks } from './hooks/useTasks';
@@ -36,19 +37,23 @@ function App() {
       }
     });
 
-    return () => {
-      data.subscription.unsubscribe();
-    };
+    return () => { data.subscription.unsubscribe(); };
   }, [loadTasks, setTasks]);
 
-  const handleSignOut = async () => {
-    await authApi.signOut();
-  };
+  const handleSignOut = async () => { await authApi.signOut(); };
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-sm text-gray-600">Checking session...</div>
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center">
+          <CheckSquare size={24} className="text-white" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+        <p className="text-slate-400 text-sm font-medium">KAPI Task</p>
       </div>
     );
   }
@@ -57,11 +62,7 @@ function App() {
     return <Auth onAuthSuccess={() => void loadTasks()} />;
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <Board userEmail={sessionEmail} onSignOut={handleSignOut} />
-    </div>
-  );
+  return <Board userEmail={sessionEmail} onSignOut={handleSignOut} />;
 }
 
 export default App;

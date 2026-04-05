@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskCard from './TaskCard';
@@ -12,69 +12,72 @@ interface ColumnProps {
   onAddTask: () => void;
 }
 
+const COLUMN_CONFIG: Record<Status, {
+  dot: string;
+  badge: string;
+  emptyIcon: string;
+}> = {
+  'todo': {
+    dot:   'bg-slate-400',
+    badge: 'bg-slate-100 text-slate-600',
+    emptyIcon: '📋',
+  },
+  'in-progress': {
+    dot:   'bg-blue-500',
+    badge: 'bg-blue-100 text-blue-700',
+    emptyIcon: '⚡',
+  },
+  'done': {
+    dot:   'bg-emerald-500',
+    badge: 'bg-emerald-100 text-emerald-700',
+    emptyIcon: '✅',
+  },
+};
+
 const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => {
   const { tasks, deleteTask } = useTasks();
-  const [isHovered, setIsHovered] = useState(false);
 
-  // Filtrar tareas por estado
   const columnTasks = tasks
-    .filter((task) => task.status === status)
+    .filter(t => t.status === status)
     .sort((a, b) => a.order - b.order);
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'todo':
-        return 'bg-slate-50 border-slate-200';
-      case 'in-progress':
-        return 'bg-blue-50 border-blue-200';
-      case 'done':
-        return 'bg-green-50 border-green-200';
-      default:
-        return 'bg-slate-50';
-    }
-  };
+  const cfg = COLUMN_CONFIG[status];
 
   return (
-    <motion.div
-      className={`rounded-xl border-2 transition-all duration-200 ${getStatusColor()} shadow-sm flex flex-col h-[calc(100vh-180px)] sm:h-[600px] min-h-[400px] overflow-hidden touch-pan-y`}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-    >
+    <div className="flex flex-col bg-gray-50/80 rounded-2xl border border-gray-200/80 min-h-[480px] max-h-[calc(100vh-160px)] overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-3 sm:p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm sm:text-base font-semibold text-gray-900">{title}</h2>
-          <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 sm:px-2.5 py-1 rounded-full">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/60 bg-white/70 rounded-t-2xl">
+        <div className="flex items-center gap-2.5">
+          <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+          <h2 className="text-sm font-semibold text-gray-800 tracking-tight">{title}</h2>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.badge}`}>
             {columnTasks.length}
           </span>
         </div>
         <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: isHovered ? 1 : 0.7, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={onAddTask}
-          className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors active:scale-95"
-          title="Add task"
-          aria-label="Add new task"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+          title="Agregar tarea"
+          aria-label="Agregar nueva tarea"
         >
-          <Plus size={20} className="sm:w-[18px] sm:h-[18px]" />
+          <Plus size={16} />
         </motion.button>
       </div>
 
-      {/* Tasks Container */}
-      <div
-        className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 overscroll-contain"
-      >
-        <AnimatePresence>
+      {/* Tasks */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 overscroll-contain">
+        <AnimatePresence mode="popLayout">
           {columnTasks.length > 0 ? (
-            columnTasks.map((task) => (
+            columnTasks.map((task, i) => (
               <motion.div
                 key={task.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: i * 0.04 } }}
+                exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.2 }}
-                className="group"
               >
                 <TaskCard
                   task={task}
@@ -84,16 +87,30 @@ const Column: React.FC<ColumnProps> = ({ status, title, onEdit, onAddTask }) => 
               </motion.div>
             ))
           ) : (
-            <div className="flex items-center justify-center h-full text-center px-4">
-              <div>
-                <p className="text-gray-400 text-sm">No hay tareas aún</p>
-                <p className="text-gray-300 text-xs mt-1">Agrega una nueva tarea</p>
-              </div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center h-40 text-center px-4 rounded-xl border-2 border-dashed border-gray-200"
+            >
+              <span className="text-2xl mb-2">{cfg.emptyIcon}</span>
+              <p className="text-sm font-medium text-gray-400">Sin tareas</p>
+              <p className="text-xs text-gray-300 mt-0.5">Agrega una nueva tarea</p>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
+
+      {/* Footer add button */}
+      <div className="px-3 pb-3 pt-1">
+        <button
+          onClick={onAddTask}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-gray-700 hover:bg-white rounded-xl transition-colors border border-dashed border-gray-200 hover:border-gray-300"
+        >
+          <Plus size={14} />
+          <span>Agregar tarea</span>
+        </button>
+      </div>
+    </div>
   );
 };
 
