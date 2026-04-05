@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import type { Task } from '../types';
 import { tasksApi } from '../lib/supabaseClient';
 import { queuePendingChange } from '../lib/db';
+import { fireConfetti } from '../lib/confetti';
 
 const hasSupabase = Boolean(
   import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -108,6 +109,12 @@ export const useTasks = create<TasksStore>((set, get) => ({
   },
 
   updateTask: async (id: string, updates: Partial<Task>) => {
+    // Fire confetti when task is marked done
+    if (updates.status === 'done') {
+      const prev = get().tasks.find((t) => t.id === id);
+      if (prev && prev.status !== 'done') fireConfetti();
+    }
+
     set((state) => ({
       tasks: state.tasks.map((task) =>
         task.id === id ? { ...task, ...updates } : task

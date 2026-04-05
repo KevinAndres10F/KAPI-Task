@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { fireConfetti } from '../lib/confetti';
 import {
   DndContext,
   DragOverlay,
@@ -90,6 +91,7 @@ export default function DraggableBoard({ statuses, onEdit, onAddTask }: Draggabl
       } else {
         // Cross-column drop — final order at end of target column
         const newOrder = columnTasks.filter((t) => t.id !== dragged.id).length;
+        if (targetStatus === 'done' && dragged.status !== 'done') fireConfetti();
         void moveTask(dragged.id, targetStatus, newOrder);
       }
     },
