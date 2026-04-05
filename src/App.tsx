@@ -6,6 +6,8 @@ import Auth from './components/Auth';
 import { useTasks } from './hooks/useTasks';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useOfflineSync } from './hooks/useOfflineSync';
+import OfflineBadge from './components/OfflineBadge';
 import { authApi } from './lib/supabaseClient';
 import './App.css';
 
@@ -13,6 +15,7 @@ function App() {
   const { loadTasks, setTasks } = useTasks();
   useRealtimeSync();
   useKeyboardShortcuts();
+  const { isOnline } = useOfflineSync();
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
@@ -70,6 +73,7 @@ function App() {
   return (
     <>
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      <OfflineBadge isOnline={isOnline} />
       <Board userEmail={sessionEmail} onSignOut={handleSignOut} />
     </>
   );
