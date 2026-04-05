@@ -1,19 +1,244 @@
 @import "tailwindcss";
 
-@layer components {
-  .card-smooth {
-    @apply rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
-  }
+/* ============================================================
+   KAPI TASK — Design System
+   Inter font · Indigo/Slate palette · Clean & Professional
+   ============================================================ */
 
+/* ---- CSS Custom Properties --------------------------------- */
+:root {
+  /* Primary (Indigo) */
+  --color-primary-50:  #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  /* Accent (Cyan) */
+  --color-accent-500:  #06b6d4;
+  --color-accent-600:  #0891b2;
+
+  /* Success (Emerald) */
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+
+  /* Warning (Amber) */
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+
+  /* Danger (Red) */
+  --color-danger-500:  #ef4444;
+  --color-danger-600:  #dc2626;
+
+  /* Layout */
+  --sidebar-width: 256px;
+  --header-height: 64px;
+}
+
+/* ---- Base -------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1e293b;
+  background-color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- Scrollbar -------------------------------------------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* ---- Animations ------------------------------------------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.animate-fadeIn    { animation: fadeIn 0.3s ease-out both; }
+.animate-slideIn   { animation: slideIn 0.3s ease-out both; }
+.animate-scaleIn   { animation: scaleIn 0.25s ease-out both; }
+
+/* ---- Component Layer -------------------------------------- */
+@layer components {
+
+  /* Buttons */
   .btn-primary {
-    @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors;
+    @apply inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700
+           text-white text-sm font-medium rounded-lg shadow-sm
+           transition-colors duration-200 cursor-pointer select-none;
   }
 
   .btn-secondary {
-    @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
+    @apply inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50
+           text-gray-700 text-sm font-medium rounded-lg border border-gray-200
+           shadow-sm transition-colors duration-200 cursor-pointer select-none;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900
+           hover:bg-gray-100 text-sm font-medium rounded-lg
+           transition-colors duration-200 cursor-pointer select-none;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700
+           text-white text-sm font-medium rounded-lg
+           transition-colors duration-200 cursor-pointer select-none;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5
+           text-sm text-gray-700 shadow-sm placeholder:text-gray-400
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           transition-shadow duration-200;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm;
+  }
+
+  .card-hover {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm
+           hover:shadow-md hover:border-gray-200 transition-all duration-200;
+  }
+
+  /* Badges */
+  .badge-success {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-green-100 text-green-700;
+  }
+
+  .badge-danger {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-red-100 text-red-700;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-amber-100 text-amber-700;
+  }
+
+  .badge-info {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-blue-100 text-blue-700;
+  }
+
+  .badge-neutral {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-gray-100 text-gray-600;
+  }
+
+  .badge-primary {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-indigo-100 text-indigo-700;
+  }
+
+  /* Sidebar navigation items */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           transition-colors duration-200 cursor-pointer select-none;
+  }
+
+  .nav-item-active {
+    @apply bg-indigo-500/20 text-indigo-300;
+  }
+
+  .nav-item-inactive {
+    @apply text-slate-300 hover:bg-slate-800 hover:text-white;
+  }
+
+  /* Section label (uppercase) */
+  .section-label {
+    @apply text-xs font-medium tracking-wider uppercase text-gray-500;
+  }
+
+  /* Empty state */
+  .empty-state {
+    @apply rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center;
+  }
+
+  /* Table styles */
+  .table-container {
+    @apply rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden;
+  }
+
+  .table-header-cell {
+    @apply px-5 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider
+           bg-gray-50/60;
+  }
+
+  .table-cell {
+    @apply px-5 py-3 text-sm text-gray-700;
   }
 }
 
-* {
-  @apply transition-colors duration-200;
+/* ---- Utility tweaks --------------------------------------- */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transition for all interactive elements */
+button, a, [role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
 }
