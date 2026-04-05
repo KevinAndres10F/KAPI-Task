@@ -5,12 +5,14 @@ import Board from './components/Board';
 import Auth from './components/Auth';
 import { useTasks } from './hooks/useTasks';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { authApi } from './lib/supabaseClient';
 import './App.css';
 
 function App() {
   const { loadTasks, setTasks } = useTasks();
   useRealtimeSync();
+  useKeyboardShortcuts();
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 

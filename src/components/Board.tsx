@@ -4,17 +4,19 @@ import {
   LayoutGrid, List, CalendarDays, BarChart2, AlignJustify,
   Plus, Search, LogOut, CheckSquare, Menu, X as CloseIcon,
   ChevronUp, ChevronDown, AlertCircle, Clock, CheckCircle2,
-  TrendingUp, Users, Filter,
+  TrendingUp, Filter,
 } from 'lucide-react';
 import TaskModal from './TaskModal';
 import Calendar from './Calendar';
 import DraggableBoard from './DraggableBoard';
+import CommandPalette from './CommandPalette';
 import type { Task, Status, Priority, ViewType } from '../types';
 import {
   PRIORITY_BADGE_CLASSES, PRIORITY_DOT_CLASSES, PRIORITY_LABELS,
   STATUS_BADGE_CLASSES, STATUS_DOT_CLASSES, STATUS_LABELS,
 } from '../types';
 import { useTasks } from '../hooks/useTasks';
+import { useCommandPalette } from '../hooks/useCommandPalette';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -305,6 +307,11 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
   /* ── render ── */
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
+      <CommandPalette
+        onNavigate={(view) => { setViewType(view); setSidebarOpen(false); }}
+        onNewTask={handleAddTask}
+        onSignOut={onSignOut}
+      />
       {/* Mobile sidebar overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -408,11 +415,17 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
             </div>
           )}
 
-          {/* Team indicator */}
-          <div className="hidden md:flex items-center gap-1.5">
-            <Users size={14} className="text-gray-400" />
-            <span className="text-xs text-gray-400">Equipo</span>
-          </div>
+          {/* Command palette trigger */}
+          <button
+            onClick={() => useCommandPalette.getState().toggle()}
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400
+                       bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100
+                       hover:text-gray-600 transition-colors"
+          >
+            <Search size={13} />
+            <span>Buscar</span>
+            <kbd className="ml-1 px-1.5 py-0.5 bg-white border border-gray-200 rounded text-[10px] font-semibold text-gray-400">⌘K</kbd>
+          </button>
 
           {/* Add task */}
           <button
