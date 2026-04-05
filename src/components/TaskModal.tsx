@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import RichTextEditor from './RichTextEditor';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Task, Priority, Status } from '../types';
 import { PRIORITY_LABELS, PRIORITY_BADGE_CLASSES, PRIORITY_DOT_CLASSES, STATUS_LABELS } from '../types';
@@ -138,12 +139,9 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Descripción
                 </label>
-                <textarea
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Agrega detalles, contexto o criterios de aceptación..."
-                  rows={3}
-                  className="input resize-none"
+                <RichTextEditor
+                  content={description}
+                  onChange={setDescription}
                 />
               </div>
 

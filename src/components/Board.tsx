@@ -1,20 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutGrid, List, CalendarDays, BarChart2, AlignJustify,
   Plus, Search, LogOut, CheckSquare, Menu, X as CloseIcon,
   ChevronUp, ChevronDown, AlertCircle, Clock, CheckCircle2,
-  TrendingUp, Users, Filter,
+  TrendingUp, Filter,
 } from 'lucide-react';
-import Column from './Column';
 import TaskModal from './TaskModal';
 import Calendar from './Calendar';
+import DraggableBoard from './DraggableBoard';
+import CommandPalette from './CommandPalette';
 import type { Task, Status, Priority, ViewType } from '../types';
 import {
   PRIORITY_BADGE_CLASSES, PRIORITY_DOT_CLASSES, PRIORITY_LABELS,
   STATUS_BADGE_CLASSES, STATUS_DOT_CLASSES, STATUS_LABELS,
 } from '../types';
 import { useTasks } from '../hooks/useTasks';
+import { useCommandPalette } from '../hooks/useCommandPalette';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -199,8 +201,32 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
 
   /* ── helpers ── */
   const handleEditTask = (task: Task) => { setSelectedTask(task); setIsModalOpen(true); };
-  const handleAddTask  = ()          => { setSelectedTask(null); setIsModalOpen(true); };
+  const handleAddTask  = useCallback(() => { setSelectedTask(null); setIsModalOpen(true); }, []);
   const handleModalClose = ()        => { setIsModalOpen(false); setSelectedTask(null); };
+
+  /* ── horizontal board scroll (pointer drag on empty area) ── */
+  const boardScrollRef = useRef<HTMLDivElement>(null);
+  const boardDrag = useRef<{ active: boolean; startX: number; scrollLeft: number }>({ active: false, startX: 0, scrollLeft: 0 });
+
+  const handleBoardPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('[data-task-card]')) return;
+    const el = boardScrollRef.current;
+    if (!el) return;
+    boardDrag.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft };
+    el.setPointerCapture(e.pointerId);
+  }, []);
+
+  const handleBoardPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!boardDrag.current.active) return;
+    const el = boardScrollRef.current;
+    if (!el) return;
+    const dx = e.clientX - boardDrag.current.startX;
+    el.scrollLeft = boardDrag.current.scrollLeft - dx;
+  }, []);
+
+  const handleBoardPointerUp = useCallback(() => {
+    boardDrag.current.active = false;
+  }, []);
 
   /* ── dashboard stats ── */
   const today = new Date();
@@ -281,6 +307,11 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
   /* ── render ── */
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
+      <CommandPalette
+        onNavigate={(view) => { setViewType(view); setSidebarOpen(false); }}
+        onNewTask={handleAddTask}
+        onSignOut={onSignOut}
+      />
       {/* Mobile sidebar overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -384,11 +415,17 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
             </div>
           )}
 
-          {/* Team indicator */}
-          <div className="hidden md:flex items-center gap-1.5">
-            <Users size={14} className="text-gray-400" />
-            <span className="text-xs text-gray-400">Equipo</span>
-          </div>
+          {/* Command palette trigger */}
+          <button
+            onClick={() => useCommandPalette.getState().toggle()}
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400
+                       bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100
+                       hover:text-gray-600 transition-colors"
+          >
+            <Search size={13} />
+            <span>Buscar</span>
+            <kbd className="ml-1 px-1.5 py-0.5 bg-white border border-gray-200 rounded text-[10px] font-semibold text-gray-400">⌘K</kbd>
+          </button>
 
           {/* Add task */}
           <button
@@ -568,18 +605,19 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
 
           {/* ── BOARD (KANBAN) ── */}
           {viewType === 'board' && (
-            <div className="p-4 sm:p-6 animate-fadeIn">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {STATUSES.map(status => (
-                  <Column
-                    key={status.value}
-                    status={status.value}
-                    title={status.label}
-                    onEdit={handleEditTask}
-                    onAddTask={handleAddTask}
-                  />
-                ))}
-              </div>
+            <div
+              ref={boardScrollRef}
+              onPointerDown={handleBoardPointerDown}
+              onPointerMove={handleBoardPointerMove}
+              onPointerUp={handleBoardPointerUp}
+              onPointerCancel={handleBoardPointerUp}
+              className="p-4 sm:p-6 animate-fadeIn overflow-x-auto cursor-grab active:cursor-grabbing select-none"
+            >
+              <DraggableBoard
+                statuses={STATUSES}
+                onEdit={handleEditTask}
+                onAddTask={() => handleAddTask()}
+              />
             </div>
           )}
 

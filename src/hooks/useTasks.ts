@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import toast from 'react-hot-toast';
 import type { Task } from '../types';
 import { tasksApi } from '../lib/supabaseClient';
+import { queuePendingChange } from '../lib/db';
 
 const hasSupabase = Boolean(
   import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -76,13 +78,19 @@ export const useTasks = create<TasksStore>((set, get) => ({
       error: null,
     }));
 
-    if (!hasSupabase) return;
+    if (!hasSupabase) {
+      toast.success('Tarea creada');
+      return;
+    }
+
+    if (!navigator.onLine) {
+      await queuePendingChange({ taskId: fallbackTask.id, type: 'create', payload: fallbackTask, timestamp: Date.now() });
+      toast('Tarea guardada localmente', { icon: '💾', style: { background: '#1e293b', color: '#f1f5f9' } });
+      return;
+    }
 
     try {
-      const created = await tasksApi.createTask({
-        ...fallbackTask,
-      });
-
+      const created = await tasksApi.createTask({ ...fallbackTask });
       if (created) {
         set((state) => ({
           tasks: state.tasks.map((item) =>
@@ -91,10 +99,11 @@ export const useTasks = create<TasksStore>((set, get) => ({
           error: null,
         }));
       }
+      toast.success('Tarea creada');
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Failed to create task',
-      });
+      const msg = error instanceof Error ? error.message : 'Failed to create task';
+      set({ error: msg });
+      toast.error(msg);
     }
   },
 
@@ -106,14 +115,24 @@ export const useTasks = create<TasksStore>((set, get) => ({
       error: null,
     }));
 
-    if (!hasSupabase) return;
+    if (!hasSupabase) {
+      toast.success('Tarea actualizada');
+      return;
+    }
+
+    if (!navigator.onLine) {
+      await queuePendingChange({ taskId: id, type: 'update', payload: { id, ...updates }, timestamp: Date.now() });
+      toast('Cambio guardado localmente', { icon: '💾', style: { background: '#1e293b', color: '#f1f5f9' } });
+      return;
+    }
 
     try {
       await tasksApi.updateTask(id, updates);
+      toast.success('Tarea actualizada');
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Failed to update task',
-      });
+      const msg = error instanceof Error ? error.message : 'Failed to update task';
+      set({ error: msg });
+      toast.error(msg);
     }
   },
 
@@ -123,14 +142,24 @@ export const useTasks = create<TasksStore>((set, get) => ({
       error: null,
     }));
 
-    if (!hasSupabase) return;
+    if (!hasSupabase) {
+      toast.success('Tarea eliminada', { icon: '🗑️' });
+      return;
+    }
+
+    if (!navigator.onLine) {
+      await queuePendingChange({ taskId: id, type: 'delete', payload: { id }, timestamp: Date.now() });
+      toast('Eliminación pendiente de sync', { icon: '💾', style: { background: '#1e293b', color: '#f1f5f9' } });
+      return;
+    }
 
     try {
       await tasksApi.deleteTask(id);
+      toast.success('Tarea eliminada', { icon: '🗑️' });
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Failed to delete task',
-      });
+      const msg = error instanceof Error ? error.message : 'Failed to delete task';
+      set({ error: msg });
+      toast.error(msg);
     }
   },
 

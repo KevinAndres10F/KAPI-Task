@@ -102,6 +102,23 @@ export const tasksApi = {
   },
 };
 
+// Supabase Realtime — live task changes across clients
+export function subscribeToTaskChanges(
+  cb: (task: Task, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => void
+) {
+  return supabase
+    .channel('tasks-live')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'tasks' },
+      (payload) => {
+        const raw = payload.eventType === 'DELETE' ? payload.old : payload.new;
+        cb(mapDbTask(raw), payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE');
+      }
+    )
+    .subscribe();
+}
+
 export const authApi = {
   async getSession() {
     const { data, error } = await supabase.auth.getSession();
