@@ -1,6 +1,6 @@
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type Status = 'todo' | 'in-progress' | 'done';
-export type ViewType = 'dashboard' | 'board' | 'backlog' | 'calendar' | 'table';
+export type ViewType = 'dashboard' | 'board' | 'backlog' | 'calendar' | 'table' | 'gantt';
 
 export interface SubTask {
   id: string;

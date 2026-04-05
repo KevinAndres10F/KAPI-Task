@@ -1,15 +1,23 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutGrid, List, CalendarDays, BarChart2, AlignJustify,
   Plus, Search, LogOut, CheckSquare, Menu, X as CloseIcon,
   ChevronUp, ChevronDown, AlertCircle, Clock, CheckCircle2,
-  TrendingUp, Filter,
+  TrendingUp, Filter, Download, Upload, BookTemplate, GanttChart,
 } from 'lucide-react';
 import TaskModal from './TaskModal';
 import Calendar from './Calendar';
 import DraggableBoard from './DraggableBoard';
 import CommandPalette from './CommandPalette';
+import BulkActionBar from './BulkActionBar';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import NotificationBell from './NotificationBell';
+import GanttView from './GanttView';
+import { useRecurring } from '../hooks/useRecurring';
+import { useBulkSelect } from '../hooks/useBulkSelect';
+import { useTaskTemplates } from '../hooks/useTaskTemplates';
+import { exportTasksToCSV, parseTasksFromCSV } from '../lib/csvUtils';
 import type { Task, Status, Priority, ViewType } from '../types';
 import {
   PRIORITY_BADGE_CLASSES, PRIORITY_DOT_CLASSES, PRIORITY_LABELS,
@@ -17,6 +25,9 @@ import {
 } from '../types';
 import { useTasks } from '../hooks/useTasks';
 import { useCommandPalette } from '../hooks/useCommandPalette';
+import { useDarkMode } from '../hooks/useDarkMode';
+import { useStreak } from '../hooks/useStreak';
+import { Moon, Sun, Flame } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -31,6 +42,7 @@ const NAV_ITEMS: { view: ViewType; label: string; Icon: React.ElementType }[] = 
   { view: 'backlog',   label: 'Backlog',    Icon: AlignJustify },
   { view: 'calendar',  label: 'Calendario', Icon: CalendarDays },
   { view: 'table',     label: 'Tabla',      Icon: List },
+  { view: 'gantt',     label: 'Gantt',      Icon: GanttChart },
 ];
 
 const STATUSES: { value: Status; label: string }[] = [
@@ -186,7 +198,14 @@ function BacklogRow({ task, onEdit, onDelete }: {
 
 /* ── Main Board component ────────────────────────────────── */
 export default function Board({ userEmail, onSignOut }: BoardProps) {
-  const { tasks, deleteTask } = useTasks();
+  const { tasks, deleteTask, updateTask, addTask } = useTasks();
+  const { dark, toggle: toggleDark } = useDarkMode();
+  const { streak, checkAndUpdate } = useStreak();
+  const { getDueRules, markGenerated } = useRecurring();
+  const { selected, clearAll } = useBulkSelect();
+  const { templates, saveTemplate, deleteTemplate } = useTaskTemplates();
+  const [showTemplates, setShowTemplates] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
   const [viewType, setViewType] = useState<ViewType>('board');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -198,6 +217,49 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
   const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  /* ── streak: check on mount ── */
+  useEffect(() => { checkAndUpdate(); }, [checkAndUpdate]);
+
+  /* ── recurring tasks: auto-generate on mount ── */
+  useEffect(() => {
+    const due = getDueRules();
+    due.forEach((rule) => {
+      void addTask({ ...rule.taskTemplate });
+      markGenerated(rule.id);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── bulk actions ── */
+  const handleBulkStatus = useCallback((status: Status) => {
+    selected.forEach((id) => void updateTask(id, { status }));
+    clearAll();
+  }, [selected, updateTask, clearAll]);
+
+  const handleBulkPriority = useCallback((priority: Priority) => {
+    selected.forEach((id) => void updateTask(id, { priority }));
+    clearAll();
+  }, [selected, updateTask, clearAll]);
+
+  const handleBulkDelete = useCallback(() => {
+    selected.forEach((id) => void deleteTask(id));
+    clearAll();
+  }, [selected, deleteTask, clearAll]);
+
+  /* ── CSV ── */
+  const handleExportCSV = useCallback(() => exportTasksToCSV(tasks), [tasks]);
+
+  const handleImportCSV = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const imported = await parseTasksFromCSV(file);
+      for (const t of imported) void addTask(t);
+    } catch {
+      // toast already handled in useTasks
+    }
+    e.target.value = '';
+  }, [addTask]);
 
   /* ── helpers ── */
   const handleEditTask = (task: Task) => { setSelectedTask(task); setIsModalOpen(true); };
@@ -358,6 +420,16 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
 
         {/* User */}
         <div className="px-3 py-4 border-t border-slate-800">
+          {/* Streak */}
+          {streak > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 mb-2">
+              <Flame size={14} className="text-amber-400 flex-shrink-0" />
+              <span className="text-xs text-slate-400">
+                <span className="font-bold text-amber-400">{streak}</span> día{streak !== 1 ? 's' : ''} consecutivo{streak !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
             <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-sm font-semibold flex-shrink-0">
               {userEmail?.charAt(0).toUpperCase() ?? 'U'}
@@ -366,6 +438,14 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
               <p className="text-xs font-medium text-white truncate">{userEmail}</p>
               <p className="text-xs text-slate-500">Miembro del equipo</p>
             </div>
+            {/* Dark mode toggle */}
+            <button
+              onClick={toggleDark}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors flex-shrink-0"
+              title={dark ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {dark ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
           </div>
           <button
             onClick={onSignOut}
@@ -427,6 +507,70 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
             <kbd className="ml-1 px-1.5 py-0.5 bg-white border border-gray-200 rounded text-[10px] font-semibold text-gray-400">⌘K</kbd>
           </button>
 
+          {/* Notifications */}
+          <NotificationBell />
+
+          {/* CSV export */}
+          <button
+            onClick={handleExportCSV}
+            title="Exportar CSV"
+            className="hidden md:flex p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Download size={16} />
+          </button>
+
+          {/* CSV import */}
+          <button
+            onClick={() => csvInputRef.current?.click()}
+            title="Importar CSV"
+            className="hidden md:flex p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Upload size={16} />
+          </button>
+          <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
+
+          {/* Templates */}
+          <div className="relative hidden md:block">
+            <button
+              onClick={() => setShowTemplates((v) => !v)}
+              title="Plantillas"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <BookTemplate size={16} />
+            </button>
+            {showTemplates && (
+              <div className="absolute right-0 top-10 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Plantillas guardadas</p>
+                {templates.length === 0 ? (
+                  <p className="text-xs text-gray-400 py-2 text-center">Ninguna plantilla aún.<br/>Guarda una desde el modal de tarea.</p>
+                ) : (
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {templates.map((tpl) => (
+                      <div key={tpl.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded-lg group">
+                        <button
+                          className="flex-1 text-left text-sm text-gray-700 truncate"
+                          onClick={() => {
+                            setSelectedTask(null);
+                            setIsModalOpen(true);
+                            setShowTemplates(false);
+                          }}
+                        >
+                          {tpl.name}
+                        </button>
+                        <button
+                          onClick={() => deleteTemplate(tpl.id)}
+                          className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                        >
+                          <CloseIcon size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Add task */}
           <button
             onClick={handleAddTask}
@@ -441,7 +585,7 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
         <main className="flex-1 overflow-auto">
           {/* ── DASHBOARD ── */}
           {viewType === 'dashboard' && (
-            <div className="p-4 sm:p-6 space-y-6 animate-fadeIn">
+            <div className="p-4 sm:p-6 space-y-6 animate-fadeIn overflow-y-auto h-full">
               {/* Stats cards */}
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard
@@ -600,6 +744,9 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
                   </div>
                 </div>
               </div>
+
+              {/* Analytics charts */}
+              <AnalyticsDashboard tasks={tasks} />
             </div>
           )}
 
@@ -787,6 +934,11 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
               <Calendar tasks={tasks} onTaskClick={handleEditTask} />
             </div>
           )}
+
+          {/* ── GANTT ── */}
+          {viewType === 'gantt' && (
+            <GanttView tasks={tasks} onEdit={handleEditTask} />
+          )}
         </main>
       </div>
 
@@ -795,6 +947,17 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         task={selectedTask}
+        onSaveTemplate={saveTemplate}
+        currentUser={userEmail}
+      />
+
+      {/* Bulk action bar */}
+      <BulkActionBar
+        count={selected.size}
+        onSetStatus={handleBulkStatus}
+        onSetPriority={handleBulkPriority}
+        onDelete={handleBulkDelete}
+        onClear={clearAll}
       />
     </div>
   );

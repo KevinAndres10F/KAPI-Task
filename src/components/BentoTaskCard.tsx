@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Trash2, Edit2, Clock, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import TimeTracker from './TimeTracker';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Task, Status } from '../types';
@@ -182,6 +183,8 @@ export default function BentoTaskCard({
             <option key={v} value={v}>{l}</option>
           ))}
         </select>
+
+        {!isDragOverlay && <TimeTracker taskId={task.id} />}
 
         {task.created_at && (
           <span className="ml-auto text-xs text-gray-300 hidden sm:block">

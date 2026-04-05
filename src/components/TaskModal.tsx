@@ -1,28 +1,34 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle2, Circle, BookTemplate } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Task, Priority, Status } from '../types';
 import { PRIORITY_LABELS, PRIORITY_BADGE_CLASSES, PRIORITY_DOT_CLASSES, STATUS_LABELS } from '../types';
 import { useTasks } from '../hooks/useTasks';
+import TaskComments from './TaskComments';
 
 interface TaskModalProps {
   isOpen: boolean;
   task?: Task | null;
   onClose: () => void;
+  onSaveTemplate?: (name: string, task: Omit<Task, 'id' | 'order'>) => void;
+  currentUser?: string | null;
 }
 
 const PRIORITY_OPTIONS: Priority[] = ['low', 'medium', 'high', 'critical'];
 const STATUS_OPTIONS:   Status[]   = ['todo', 'in-progress', 'done'];
 
-export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
+export default function TaskModal({ isOpen, task, onClose, onSaveTemplate, currentUser }: TaskModalProps) {
   const { addTask, updateTask } = useTasks();
   const [title,          setTitle]          = useState('');
   const [description,    setDescription]    = useState('');
   const [priority,       setPriority]       = useState<Priority>('medium');
   const [status,         setStatus]         = useState<Status>('todo');
   const [assignee,       setAssignee]       = useState('');
+  const [templateName,   setTemplateName]   = useState('');
+  const [showTplInput,   setShowTplInput]   = useState(false);
+  const [activeTab,      setActiveTab]      = useState<'details' | 'comments'>('details');
   const [dueDate,        setDueDate]        = useState('');
   const [subtasks,       setSubtasks]       = useState<{ id: string; title: string; completed: boolean }[]>([]);
   const [newSubtask,     setNewSubtask]     = useState('');
@@ -117,9 +123,26 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
               </Dialog.Close>
             </div>
 
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 px-6">
+              {(['details', 'comments'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab === 'details' ? 'Detalles' : 'Comentarios'}
+                </button>
+              ))}
+            </div>
+
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 overscroll-contain">
-              {/* Title */}
+              {/* Title — always visible */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Título <span className="text-red-500">*</span>
@@ -133,6 +156,9 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                   autoFocus
                 />
               </div>
+
+              {/* Details tab content */}
+              {activeTab === 'details' && (<>
 
               {/* Description */}
               <div>
@@ -316,25 +342,72 @@ export default function TaskModal({ isOpen, task, onClose }: TaskModalProps) {
                   </button>
                 </div>
               </div>
+
+              </>)}
+
+              {/* Comments tab content */}
+              {activeTab === 'comments' && task && (
+                <TaskComments taskId={task.id} currentUser={currentUser} />
+              )}
+              {activeTab === 'comments' && !task && (
+                <p className="text-sm text-gray-400 text-center py-6">Guarda la tarea primero para agregar comentarios.</p>
+              )}
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-100 px-6 py-4 flex items-center gap-3 justify-end flex-shrink-0 bg-gray-50/50">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-secondary"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={!title.trim()}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-              >
-                {task ? 'Guardar cambios' : 'Crear tarea'}
-              </button>
+            <div className="border-t border-gray-100 px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-gray-50/50">
+              {/* Save as template */}
+              {onSaveTemplate && (
+                <div className="flex items-center gap-2 flex-1">
+                  {showTplInput ? (
+                    <>
+                      <input
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        placeholder="Nombre de plantilla..."
+                        className="input py-1.5 text-xs flex-1"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        disabled={!templateName.trim() || !title.trim()}
+                        onClick={() => {
+                          onSaveTemplate(templateName.trim(), { title, description, priority, status, assignee: assignee || undefined, dueDate: dueDate || undefined, subtasks });
+                          setTemplateName('');
+                          setShowTplInput(false);
+                        }}
+                        className="btn-secondary py-1.5 text-xs"
+                      >
+                        Guardar
+                      </button>
+                      <button type="button" onClick={() => setShowTplInput(false)} className="text-gray-400 hover:text-gray-600">
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowTplInput(true)}
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <BookTemplate size={13} />
+                      Guardar como plantilla
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-3 ml-auto">
+                <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!title.trim()}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                >
+                  {task ? 'Guardar cambios' : 'Crear tarea'}
+                </button>
+              </div>
             </div>
           </motion.div>
         </Dialog.Content>
