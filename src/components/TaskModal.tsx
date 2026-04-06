@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Plus, Trash2, CheckCircle2, Circle, BookTemplate } from 'lucide-react';
+import { X, Plus, Trash2, CheckCircle2, Circle, BookTemplate, Sparkles, Loader2 } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Task, Priority, Status } from '../types';
 import { PRIORITY_LABELS, PRIORITY_BADGE_CLASSES, PRIORITY_DOT_CLASSES, STATUS_LABELS } from '../types';
 import { useTasks } from '../hooks/useTasks';
 import TaskComments from './TaskComments';
+import { aiGenerateDescription, aiSuggestPriority } from '../lib/geminiClient';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ export default function TaskModal({ isOpen, task, onClose, onSaveTemplate, curre
   const [templateName,   setTemplateName]   = useState('');
   const [showTplInput,   setShowTplInput]   = useState(false);
   const [activeTab,      setActiveTab]      = useState<'details' | 'comments'>('details');
+  const [aiDescLoading,  setAiDescLoading]  = useState(false);
+  const [aiPrioLoading,  setAiPrioLoading]  = useState(false);
   const [dueDate,        setDueDate]        = useState('');
   const [subtasks,       setSubtasks]       = useState<{ id: string; title: string; completed: boolean }[]>([]);
   const [newSubtask,     setNewSubtask]     = useState('');
@@ -162,9 +165,47 @@ export default function TaskModal({ isOpen, task, onClose, onSaveTemplate, curre
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Descripción
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!title.trim() || aiPrioLoading || aiDescLoading}
+                      onClick={async () => {
+                        if (!title.trim()) return;
+                        setAiPrioLoading(true);
+                        try {
+                          const { priority: p } = await aiSuggestPriority(title, description);
+                          setPriority(p);
+                        } catch { /* silent */ } finally { setAiPrioLoading(false); }
+                      }}
+                      className="flex items-center gap-1 text-[11px] text-purple-500 hover:text-purple-700
+                                 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-full transition-colors
+                                 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {aiPrioLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                      Sugerir prioridad
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!title.trim() || aiDescLoading || aiPrioLoading}
+                      onClick={async () => {
+                        if (!title.trim()) return;
+                        setAiDescLoading(true);
+                        try {
+                          const desc = await aiGenerateDescription(title);
+                          setDescription(desc);
+                        } catch { /* silent */ } finally { setAiDescLoading(false); }
+                      }}
+                      className="flex items-center gap-1 text-[11px] text-indigo-500 hover:text-indigo-700
+                                 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-full transition-colors
+                                 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {aiDescLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                      Generar con IA
+                    </button>
+                  </div>
+                </div>
                 <RichTextEditor
                   content={description}
                   onChange={setDescription}
