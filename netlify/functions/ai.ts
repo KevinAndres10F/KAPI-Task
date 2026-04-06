@@ -11,7 +11,6 @@ const CORS_HEADERS = {
 };
 
 export const handler: Handler = async (event) => {
-  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: CORS_HEADERS, body: '' };
   }
@@ -25,7 +24,7 @@ export const handler: Handler = async (event) => {
   }
 
   let action: string;
-  let payload: Record<string, string>;
+  let payload: Record<string, unknown>;
 
   try {
     ({ action, payload } = JSON.parse(event.body ?? '{}'));
@@ -36,7 +35,9 @@ export const handler: Handler = async (event) => {
   try {
     let result: object;
 
+    // ── Create Task ───────────────────────────────────────────────────────────
     if (action === 'create_task') {
+      const text = payload.text as string;
       const prompt = `Eres un asistente de gestión de proyectos. Extrae una tarea estructurada del siguiente texto en español.
 Responde ÚNICAMENTE con un JSON válido, sin markdown, sin explicaciones:
 {
@@ -56,13 +57,15 @@ Reglas de prioridad:
 
 Fecha actual: ${new Date().toISOString().slice(0, 10)}
 
-Texto: "${payload.text}"`;
+Texto: "${text}"`;
 
       const res = await model.generateContent(prompt);
       const raw = res.response.text().replace(/```json\n?|```\n?/g, '').trim();
       result = JSON.parse(raw);
 
+    // ── Generate Description ──────────────────────────────────────────────────
     } else if (action === 'generate_description') {
+      const title = payload.title as string;
       const prompt = `Eres un PM senior. Escribe una descripción profesional y concisa para esta tarea de gestión de proyectos.
 La descripción debe incluir:
 - Contexto/objetivo en 1-2 oraciones
@@ -70,12 +73,15 @@ La descripción debe incluir:
 
 Responde SOLO el texto de la descripción (sin título, sin JSON). Máximo 120 palabras. En español.
 
-Tarea: "${payload.title}"`;
+Tarea: "${title}"`;
 
       const res = await model.generateContent(prompt);
       result = { description: res.response.text().trim() };
 
+    // ── Suggest Priority ──────────────────────────────────────────────────────
     } else if (action === 'suggest_priority') {
+      const title = payload.title as string;
+      const description = (payload.description as string) ?? '';
       const prompt = `Eres un PM senior. Analiza esta tarea y sugiere su prioridad.
 Responde ÚNICAMENTE con JSON válido, sin markdown:
 {"priority":"low|medium|high|critical","reason":"razón breve en español (máx 60 caracteres)"}
@@ -86,12 +92,62 @@ Reglas:
 - medium: mejora importante, puede esperar unos días
 - low: backlog, optimización, sin deadline claro
 
-Tarea: "${payload.title}"
-${payload.description ? `Descripción: "${payload.description}"` : ''}`;
+Tarea: "${title}"
+${description ? `Descripción: "${description}"` : ''}`;
 
       const res = await model.generateContent(prompt);
       const raw = res.response.text().replace(/```json\n?|```\n?/g, '').trim();
       result = JSON.parse(raw);
+
+    // ── Kapibot Chat ──────────────────────────────────────────────────────────
+    } else if (action === 'chat') {
+      const messages = payload.messages as Array<{ role: 'user' | 'model'; content: string }>;
+      const boardContext = payload.boardContext as string;
+
+      const systemPrompt = `Eres Kapibot, el asistente inteligente de KAPI — una app de gestión de proyectos estilo Jira/Trello.
+Eres amigable, conciso y experto en gestión de proyectos ágiles.
+Siempre respondes en español, con respuestas cortas y directas (máx 3 párrafos).
+Puedes ayudar con:
+- Crear tareas (responde con la acción create_task)
+- Analizar el estado del tablero
+- Sugerir prioridades, mejoras y buenas prácticas ágiles
+- Responder preguntas sobre el proyecto
+
+ESTADO ACTUAL DEL TABLERO:
+${boardContext}
+
+Reglas de respuesta:
+1. Si el usuario quiere crear una tarea, responde ÚNICAMENTE con este JSON (sin texto extra):
+{"action":"create_task","task":{"title":"...","priority":"low|medium|high|critical","status":"todo","assignee":null,"dueDate":null,"description":"..."},"message":"texto amigable confirmando la creación"}
+
+2. Para cualquier otra consulta, responde ÚNICAMENTE con:
+{"action":null,"message":"tu respuesta en texto"}
+
+IMPORTANTE: Responde SIEMPRE con JSON válido, sin markdown, sin código extra.`;
+
+      // Build chat history for multi-turn context
+      const chatHistory = messages.slice(0, -1).map(m => ({
+        role: m.role,
+        parts: [{ text: m.content }],
+      }));
+
+      const chat = model.startChat({
+        history: [
+          { role: 'user', parts: [{ text: systemPrompt }] },
+          { role: 'model', parts: [{ text: '{"action":null,"message":"¡Hola! Soy Kapibot, tu asistente de KAPI. ¿En qué puedo ayudarte hoy?"}' }] },
+          ...chatHistory,
+        ],
+      });
+
+      const lastMessage = messages[messages.length - 1];
+      const res = await chat.sendMessage(lastMessage.content);
+      const raw = res.response.text().replace(/```json\n?|```\n?/g, '').trim();
+
+      try {
+        result = JSON.parse(raw);
+      } catch {
+        result = { action: null, message: raw };
+      }
 
     } else {
       return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: `Unknown action: ${action}` }) };

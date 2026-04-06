@@ -15,6 +15,7 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 import NotificationBell from './NotificationBell';
 import GanttView from './GanttView';
 import AITaskCreator from './AITaskCreator';
+import Kapibot from './Kapibot';
 import { useRecurring } from '../hooks/useRecurring';
 import { useBulkSelect } from '../hooks/useBulkSelect';
 import { useTaskTemplates } from '../hooks/useTaskTemplates';
@@ -975,6 +976,17 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
         onSetPriority={handleBulkPriority}
         onDelete={handleBulkDelete}
         onClear={clearAll}
+      />
+
+      {/* Kapibot — floating AI chat assistant */}
+      <Kapibot
+        tasks={tasks}
+        onCreateTask={(task) => void addTask({
+          ...task,
+          order: 0,
+          assignee: task.assignee ?? undefined,
+          dueDate: task.dueDate ?? undefined,
+        })}
       />
     </div>
   );

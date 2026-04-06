@@ -4,7 +4,7 @@ import type { Priority, Status } from '../types';
 // In local dev with netlify dev: same URL works via local function emulation
 const AI_ENDPOINT = '/.netlify/functions/ai';
 
-async function callAI<T>(action: string, payload: Record<string, string>): Promise<T> {
+async function callAI<T>(action: string, payload: Record<string, unknown>): Promise<T> {
   const res = await fetch(AI_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -28,6 +28,17 @@ export interface AITask {
   description: string;
 }
 
+export interface KapibotMessage {
+  role: 'user' | 'model';
+  content: string;
+}
+
+export interface KapibotResponse {
+  action: 'create_task' | null;
+  task?: AITask;
+  message: string;
+}
+
 /** Parse natural language text into a structured task. */
 export function aiCreateTask(text: string): Promise<AITask> {
   return callAI<AITask>('create_task', { text });
@@ -45,4 +56,12 @@ export function aiSuggestPriority(
   description?: string
 ): Promise<{ priority: Priority; reason: string }> {
   return callAI('suggest_priority', { title, description: description ?? '' });
+}
+
+/** Multi-turn chat with Kapibot, aware of current board state. */
+export function kapibotChat(
+  messages: KapibotMessage[],
+  boardContext: string
+): Promise<KapibotResponse> {
+  return callAI<KapibotResponse>('chat', { messages, boardContext });
 }
