@@ -4,7 +4,7 @@ import {
   LayoutGrid, List, CalendarDays, BarChart2, AlignJustify,
   Plus, Search, LogOut, CheckSquare, Menu, X as CloseIcon,
   ChevronUp, ChevronDown, AlertCircle, Clock, CheckCircle2,
-  TrendingUp, Filter, Download, Upload, BookTemplate, GanttChart,
+  TrendingUp, Filter, Download, Upload, BookTemplate, GanttChart, Sparkles,
 } from 'lucide-react';
 import TaskModal from './TaskModal';
 import Calendar from './Calendar';
@@ -14,6 +14,7 @@ import BulkActionBar from './BulkActionBar';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import NotificationBell from './NotificationBell';
 import GanttView from './GanttView';
+import AITaskCreator from './AITaskCreator';
 import { useRecurring } from '../hooks/useRecurring';
 import { useBulkSelect } from '../hooks/useBulkSelect';
 import { useTaskTemplates } from '../hooks/useTaskTemplates';
@@ -205,6 +206,7 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
   const { selected, clearAll } = useBulkSelect();
   const { templates, saveTemplate, deleteTemplate } = useTaskTemplates();
   const [showTemplates, setShowTemplates] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [viewType, setViewType] = useState<ViewType>('board');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -494,6 +496,18 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
               />
             </div>
           )}
+
+          {/* AI task creator button */}
+          <button
+            onClick={() => setAiOpen(true)}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                       text-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50
+                       border border-indigo-200 rounded-lg hover:from-indigo-100 hover:to-purple-100
+                       transition-colors"
+          >
+            <Sparkles size={13} />
+            <span>IA</span>
+          </button>
 
           {/* Command palette trigger */}
           <button
@@ -950,6 +964,9 @@ export default function Board({ userEmail, onSignOut }: BoardProps) {
         onSaveTemplate={saveTemplate}
         currentUser={userEmail}
       />
+
+      {/* AI Task Creator */}
+      <AITaskCreator isOpen={aiOpen} onClose={() => setAiOpen(false)} />
 
       {/* Bulk action bar */}
       <BulkActionBar
