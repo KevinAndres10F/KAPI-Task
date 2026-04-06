@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/KAPI-Task/sw.js', { scope: '/KAPI-Task/' })})}
