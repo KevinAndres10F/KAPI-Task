@@ -9,10 +9,9 @@ const CORS_HEADERS = {
 
 // Models tried in order — skips on 429 quota or 404 not-found errors
 const MODEL_CASCADE = [
+  'gemini-2.5-flash',
   'gemini-2.0-flash-lite',
   'gemini-1.5-flash-8b',
-  'gemini-1.5-flash-latest',
-  'gemini-1.5-pro-latest',
 ];
 
 export const handler: Handler = async (event) => {
