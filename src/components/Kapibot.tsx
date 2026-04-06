@@ -21,38 +21,77 @@ interface ChatMessage {
 const QUICK_PROMPTS = [
   '¿Qué tareas están vencidas?',
   'Crea una tarea de revisión de código',
-  '¿Cómo va el proyecto?',
-  'Sugiere qué hacer primero',
+  '¿Qué debería priorizar hoy?',
+  'Dame un resumen del proyecto',
+  '¿Qué está bloqueado?',
 ];
 
-function buildBoardContext(tasks: Task[]): string {
-  const total = tasks.length;
-  const byStatus = {
-    todo: tasks.filter(t => t.status === 'todo').length,
-    'in-progress': tasks.filter(t => t.status === 'in-progress').length,
-    done: tasks.filter(t => t.status === 'done').length,
-  };
-  const overdue = tasks.filter(
-    t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done'
-  );
-  const critical = tasks.filter(t => t.priority === 'critical' && t.status !== 'done');
-  const today = new Date().toISOString().slice(0, 10);
+const STATUS_ES: Record<string, string> = {
+  'todo': 'Por hacer',
+  'in-progress': 'En progreso',
+  'done': 'Completada',
+};
 
-  let ctx = `Fecha: ${today}. Total tareas: ${total}. `;
-  ctx += `Por hacer: ${byStatus.todo}, En progreso: ${byStatus['in-progress']}, Completadas: ${byStatus.done}. `;
-  if (overdue.length > 0) {
-    ctx += `Vencidas (${overdue.length}): ${overdue.slice(0, 3).map(t => `"${t.title}"`).join(', ')}. `;
-  }
-  if (critical.length > 0) {
-    ctx += `Críticas pendientes: ${critical.slice(0, 3).map(t => `"${t.title}"`).join(', ')}. `;
-  }
-  if (tasks.length > 0) {
-    const inProg = tasks.filter(t => t.status === 'in-progress').slice(0, 3);
-    if (inProg.length > 0) {
-      ctx += `En progreso ahora: ${inProg.map(t => `"${t.title}"`).join(', ')}.`;
+const PRIORITY_ES: Record<string, string> = {
+  critical: 'Crítica', high: 'Alta', medium: 'Media', low: 'Baja',
+};
+
+function buildBoardContext(tasks: Task[]): string {
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const byStatus = {
+    todo: tasks.filter(t => t.status === 'todo'),
+    inProgress: tasks.filter(t => t.status === 'in-progress'),
+    done: tasks.filter(t => t.status === 'done'),
+  };
+
+  const overdue = tasks.filter(
+    t => t.dueDate && new Date(t.dueDate) < today && t.status !== 'done'
+  );
+
+  // Serialize all tasks with full detail for complete awareness
+  function serializeTask(t: Task): string {
+    const parts = [`• [${STATUS_ES[t.status]}] [${PRIORITY_ES[t.priority]}] "${t.title}"`];
+    if (t.assignee) parts.push(`  Asignado: ${t.assignee}`);
+    if (t.dueDate) {
+      const isOverdue = new Date(t.dueDate) < today && t.status !== 'done';
+      parts.push(`  Fecha límite: ${t.dueDate}${isOverdue ? ' ⚠️ VENCIDA' : ''}`);
     }
+    if (t.description) parts.push(`  Descripción: ${t.description.slice(0, 100)}`);
+    return parts.join('\n');
   }
-  return ctx;
+
+  const lines: string[] = [
+    `Fecha hoy: ${todayStr}`,
+    `Resumen: ${tasks.length} tareas total — ${byStatus.todo.length} por hacer, ${byStatus.inProgress.length} en progreso, ${byStatus.done.length} completadas, ${overdue.length} vencidas.`,
+    '',
+  ];
+
+  if (byStatus.inProgress.length > 0) {
+    lines.push('EN PROGRESO:');
+    byStatus.inProgress.forEach(t => lines.push(serializeTask(t)));
+    lines.push('');
+  }
+
+  if (byStatus.todo.length > 0) {
+    lines.push('POR HACER:');
+    byStatus.todo.forEach(t => lines.push(serializeTask(t)));
+    lines.push('');
+  }
+
+  if (overdue.length > 0) {
+    lines.push('VENCIDAS:');
+    overdue.forEach(t => lines.push(serializeTask(t)));
+    lines.push('');
+  }
+
+  if (byStatus.done.length > 0) {
+    lines.push(`COMPLETADAS (${byStatus.done.length} tareas):`);
+    byStatus.done.forEach(t => lines.push(serializeTask(t)));
+  }
+
+  return lines.join('\n');
 }
 
 function TypingDots() {
