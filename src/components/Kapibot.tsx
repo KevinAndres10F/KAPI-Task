@@ -159,7 +159,7 @@ export default function Kapibot({ tasks, onCreateTask }: Props) {
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'model',
-        content: 'Ups, tuve un error al conectar con la IA. ¿Intentamos de nuevo? 🙏',
+        content: `Error al conectar con la IA: ${err instanceof Error ? err.message : String(err)}`,
       };
       setMessages(prev => prev.filter(m => m.id !== 'typing').concat(errorMsg));
       console.error('[Kapibot]', err);

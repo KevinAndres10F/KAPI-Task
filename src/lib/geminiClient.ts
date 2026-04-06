@@ -13,7 +13,7 @@ async function callAI<T>(action: string, payload: Record<string, unknown>): Prom
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error ?? `AI request failed (${res.status})`);
+    throw new Error(`[${res.status}] ${err.detail ?? err.error ?? res.statusText}`);
   }
 
   return res.json();
