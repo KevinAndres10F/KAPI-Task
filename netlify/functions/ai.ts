@@ -1,9 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { Handler } from '@netlify/functions';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY!);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
@@ -32,11 +29,14 @@ export const handler: Handler = async (event) => {
     return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
 
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY);
+
   try {
     let result: object;
 
     // ── Create Task ───────────────────────────────────────────────────────────
     if (action === 'create_task') {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const text = payload.text as string;
       const prompt = `Eres un asistente de gestión de proyectos. Extrae una tarea estructurada del siguiente texto en español.
 Responde ÚNICAMENTE con un JSON válido, sin markdown, sin explicaciones:
@@ -65,6 +65,7 @@ Texto: "${text}"`;
 
     // ── Generate Description ──────────────────────────────────────────────────
     } else if (action === 'generate_description') {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const title = payload.title as string;
       const prompt = `Eres un PM senior. Escribe una descripción profesional y concisa para esta tarea de gestión de proyectos.
 La descripción debe incluir:
@@ -80,6 +81,7 @@ Tarea: "${title}"`;
 
     // ── Suggest Priority ──────────────────────────────────────────────────────
     } else if (action === 'suggest_priority') {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const title = payload.title as string;
       const description = (payload.description as string) ?? '';
       const prompt = `Eres un PM senior. Analiza esta tarea y sugiere su prioridad.
@@ -104,11 +106,14 @@ ${description ? `Descripción: "${description}"` : ''}`;
       const messages = payload.messages as Array<{ role: 'user' | 'model'; content: string }>;
       const boardContext = payload.boardContext as string;
 
-      const systemPrompt = `Eres Kapibot, el asistente inteligente de KAPI — una app de gestión de proyectos estilo Jira/Trello.
+      // Use systemInstruction for cleaner prompt injection (avoids startChat history quirks)
+      const chatModel = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        systemInstruction: `Eres Kapibot, el asistente inteligente de KAPI — una app de gestión de proyectos estilo Jira/Trello.
 Eres amigable, conciso y experto en gestión de proyectos ágiles.
 Siempre respondes en español, con respuestas cortas y directas (máx 3 párrafos).
 Puedes ayudar con:
-- Crear tareas (responde con la acción create_task)
+- Crear tareas
 - Analizar el estado del tablero
 - Sugerir prioridades, mejoras y buenas prácticas ágiles
 - Responder preguntas sobre el proyecto
@@ -116,29 +121,23 @@ Puedes ayudar con:
 ESTADO ACTUAL DEL TABLERO:
 ${boardContext}
 
-Reglas de respuesta:
-1. Si el usuario quiere crear una tarea, responde ÚNICAMENTE con este JSON (sin texto extra):
-{"action":"create_task","task":{"title":"...","priority":"low|medium|high|critical","status":"todo","assignee":null,"dueDate":null,"description":"..."},"message":"texto amigable confirmando la creación"}
+REGLAS DE RESPUESTA — responde SIEMPRE con JSON válido (sin markdown):
 
-2. Para cualquier otra consulta, responde ÚNICAMENTE con:
-{"action":null,"message":"tu respuesta en texto"}
+Si el usuario quiere crear una tarea:
+{"action":"create_task","task":{"title":"...","priority":"low|medium|high|critical","status":"todo","assignee":null,"dueDate":null,"description":"..."},"message":"Listo, creé la tarea X para ti."}
 
-IMPORTANTE: Responde SIEMPRE con JSON válido, sin markdown, sin código extra.`;
+Para cualquier otra consulta:
+{"action":null,"message":"tu respuesta aquí"}`,
+      });
 
-      // Build chat history for multi-turn context
-      const chatHistory = messages.slice(0, -1).map(m => ({
-        role: m.role,
+      // Build alternating history (Gemini requires user/model alternation)
+      // messages already include the current user message at the end
+      const history = messages.slice(0, -1).map(m => ({
+        role: m.role as 'user' | 'model',
         parts: [{ text: m.content }],
       }));
 
-      const chat = model.startChat({
-        history: [
-          { role: 'user', parts: [{ text: systemPrompt }] },
-          { role: 'model', parts: [{ text: '{"action":null,"message":"¡Hola! Soy Kapibot, tu asistente de KAPI. ¿En qué puedo ayudarte hoy?"}' }] },
-          ...chatHistory,
-        ],
-      });
-
+      const chat = chatModel.startChat({ history });
       const lastMessage = messages[messages.length - 1];
       const res = await chat.sendMessage(lastMessage.content);
       const raw = res.response.text().replace(/```json\n?|```\n?/g, '').trim();
@@ -146,6 +145,7 @@ IMPORTANTE: Responde SIEMPRE con JSON válido, sin markdown, sin código extra.`
       try {
         result = JSON.parse(raw);
       } catch {
+        // Fallback: wrap plain text in expected shape
         result = { action: null, message: raw };
       }
 
